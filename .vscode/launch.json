@@ -9,7 +9,7 @@
             "name": "Quick Launch",
             "type": "node-terminal",
             "request": "launch",
-            "command": "cargo run --features dev",
+            "command": "cargo run --features dev"
         },
         {
             "type": "lldb",
@@ -18,20 +18,20 @@
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=bevy_game",
-                    "--package=bevy_game",
+                    "--bin=snake",
+                    "--package=snake",
                     "--features",
                     "dev"
                 ],
                 "filter": {
-                    "name": "bevy_game",
+                    "name": "snake",
                     "kind": "bin"
-                },
+                }
             },
             "args": [],
             "cwd": "${workspaceFolder}",
             "env": {
-                "CARGO_MANIFEST_DIR": "${workspaceFolder}",
+                "CARGO_MANIFEST_DIR": "${workspaceFolder}"
             },
             "linux": {
                 "env": {
@@ -49,13 +49,13 @@
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=bevy_game",
-                    "--package=bevy_game",
+                    "--bin=snake",
+                    "--package=snake",
                     "--features",
                     "dev"
                 ],
                 "filter": {
-                    "name": "bevy_game",
+                    "name": "snake",
                     "kind": "bin"
                 }
             },

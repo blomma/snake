@@ -1,209 +1,239 @@
-use crate::loading::TextureAssets;
-use crate::GameState;
-use bevy::prelude::*;
+use bevy::{app::AppExit, color::palettes::css::ANTIQUE_WHITE, prelude::*};
+
+use crate::prelude::TITLE;
+
+use super::{despawn_screen, GameState};
 
 pub struct MenuPlugin;
 
-/// This plugin is responsible for the game menu (containing only one button...)
-/// The menu is only drawn during the State `GameState::Menu` and is removed when that state is exited
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::Menu), setup_menu)
-            .add_systems(Update, click_play_button.run_if(in_state(GameState::Menu)))
-            .add_systems(OnExit(GameState::Menu), cleanup_menu);
+            .add_systems(
+                Update,
+                (gamepad, keyboard).run_if(in_state(GameState::Menu)),
+            )
+            .add_systems(OnExit(GameState::Menu), despawn_screen::<OnMenuScreen>)
+            .insert_resource(Selected::default());
     }
 }
 
+const TITLE_COLOR: Color = Color::Srgba(ANTIQUE_WHITE);
+const BUTTON_TEXT_COLOR: Color = Color::srgb(0.5, 0.5, 0.5);
+const BUTTON_BACKGROUND_COLOR: Color = Color::srgb(0.15, 0.15, 0.15);
+const BUTTON_SELECTED_BACKGROUND_COLOR: Color = Color::srgb(0.25, 0.25, 0.25);
+
 #[derive(Component)]
-struct ButtonColors {
-    normal: Color,
-    hovered: Color,
+struct OnMenuScreen;
+
+#[derive(Component, Default, Debug, PartialEq)]
+pub enum MenuButton {
+    #[default]
+    Play,
+    Highscore,
+    Quit,
 }
 
-impl Default for ButtonColors {
-    fn default() -> Self {
-        ButtonColors {
-            normal: Color::linear_rgb(0.15, 0.15, 0.15),
-            hovered: Color::linear_rgb(0.25, 0.25, 0.25),
+impl MenuButton {
+    fn previous(&self) -> Self {
+        match *self {
+            MenuButton::Play => MenuButton::Quit,
+            MenuButton::Highscore => MenuButton::Play,
+            MenuButton::Quit => MenuButton::Highscore,
+        }
+    }
+
+    fn next(&self) -> Self {
+        match *self {
+            MenuButton::Play => MenuButton::Highscore,
+            MenuButton::Highscore => MenuButton::Quit,
+            MenuButton::Quit => MenuButton::Play,
         }
     }
 }
 
-#[derive(Component)]
-struct Menu;
+#[derive(Default, Resource, Debug)]
+pub struct Selected(pub MenuButton);
 
-fn setup_menu(mut commands: Commands, textures: Res<TextureAssets>) {
-    info!("menu");
-    commands.spawn((Camera2d, Msaa::Off));
+fn keyboard(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut selected: ResMut<Selected>,
+    mut game_state: ResMut<NextState<GameState>>,
+    mut app_exit_events: EventWriter<AppExit>,
+    query: Query<(&mut BackgroundColor, &MenuButton)>,
+) {
+    if keyboard_input.any_just_released([KeyCode::ArrowUp, KeyCode::KeyW, KeyCode::KeyK]) {
+        selected.0 = selected.0.previous();
+        update_selected_button(&selected.into(), query);
+        return;
+    }
+
+    if keyboard_input.any_just_released([KeyCode::ArrowDown, KeyCode::KeyS, KeyCode::KeyJ]) {
+        selected.0 = selected.0.next();
+        update_selected_button(&selected.into(), query);
+        return;
+    }
+
+    if keyboard_input.any_just_released([KeyCode::Enter, KeyCode::Space]) {
+        match &selected.0 {
+            MenuButton::Play => game_state.set(GameState::Game),
+            MenuButton::Highscore => game_state.set(GameState::Highscore),
+            MenuButton::Quit => {
+                app_exit_events.send(AppExit::Success);
+            }
+        }
+    }
+}
+
+pub fn gamepad(
+    gamepads: Query<&Gamepad>,
+    mut selected: ResMut<Selected>,
+    query: Query<(&mut BackgroundColor, &MenuButton)>,
+    mut game_state: ResMut<NextState<GameState>>,
+    mut app_exit_events: EventWriter<AppExit>,
+) {
+    for gamepad in gamepads.iter() {
+        if gamepad.just_released(GamepadButton::DPadUp) {
+            selected.0 = selected.0.previous();
+            update_selected_button(&selected.into(), query);
+            return;
+        }
+
+        if gamepad.just_released(GamepadButton::DPadDown) {
+            selected.0 = selected.0.next();
+            update_selected_button(&selected.into(), query);
+            return;
+        }
+
+        if gamepad.just_released(GamepadButton::South) {
+            match &selected.0 {
+                MenuButton::Play => game_state.set(GameState::Game),
+                MenuButton::Highscore => game_state.set(GameState::Highscore),
+                MenuButton::Quit => {
+                    app_exit_events.send(AppExit::Success);
+                }
+            }
+        }
+    }
+}
+
+fn update_selected_button(
+    selected: &Res<Selected>,
+    mut query: Query<(&mut BackgroundColor, &MenuButton)>,
+) {
+    for (mut background_color, action) in &mut query {
+        if &selected.0 == action {
+            background_color.0 = BUTTON_SELECTED_BACKGROUND_COLOR;
+        } else {
+            background_color.0 = BUTTON_BACKGROUND_COLOR;
+        }
+    }
+}
+
+fn setup_menu(mut commands: Commands, selected: Res<Selected>) {
+    let button_node = Node {
+        width: Val::Px(340.0),
+        height: Val::Px(65.0),
+        margin: UiRect::all(Val::Px(20.0)),
+        padding: UiRect::all(Val::Px(45.0)),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
+        ..default()
+    };
+
     commands
         .spawn((
             Node {
                 width: Val::Percent(100.0),
                 height: Val::Percent(100.0),
-                flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
                 ..default()
             },
-            Menu,
+            OnMenuScreen,
         ))
-        .with_children(|children| {
-            let button_colors = ButtonColors::default();
-            children
-                .spawn((
-                    Button,
-                    Node {
-                        width: Val::Px(140.0),
-                        height: Val::Px(50.0),
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        ..Default::default()
-                    },
-                    BackgroundColor(button_colors.normal),
-                    button_colors,
-                    ChangeState(GameState::Playing),
-                ))
-                .with_child((
-                    Text::new("Play"),
-                    TextFont {
-                        font_size: 40.0,
-                        ..default()
-                    },
-                    TextColor(Color::linear_rgb(0.9, 0.9, 0.9)),
-                ));
-        });
-    commands
-        .spawn((
-            Node {
-                flex_direction: FlexDirection::Row,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::SpaceAround,
-                bottom: Val::Px(5.),
-                width: Val::Percent(100.),
-                position_type: PositionType::Absolute,
-                ..default()
-            },
-            Menu,
-        ))
-        .with_children(|children| {
-            children
-                .spawn((
-                    Button,
-                    Node {
-                        width: Val::Px(170.0),
-                        height: Val::Px(50.0),
-                        justify_content: JustifyContent::SpaceAround,
-                        align_items: AlignItems::Center,
-                        padding: UiRect::all(Val::Px(5.)),
-                        ..Default::default()
-                    },
-                    BackgroundColor(Color::NONE),
-                    ButtonColors {
-                        normal: Color::NONE,
-                        ..default()
-                    },
-                    OpenLink("https://bevyengine.org"),
-                ))
+        .with_children(|parent| {
+            parent
+                .spawn(Node {
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    ..default()
+                })
                 .with_children(|parent| {
                     parent.spawn((
-                        Text::new("Made with Bevy"),
+                        Text::new(TITLE),
                         TextFont {
-                            font_size: 15.0,
+                            font_size: 128.0,
                             ..default()
                         },
-                        TextColor(Color::linear_rgb(0.9, 0.9, 0.9)),
-                    ));
-                    parent.spawn((
-                        ImageNode {
-                            image: textures.bevy.clone(),
-                            ..default()
-                        },
+                        TextColor(TITLE_COLOR),
                         Node {
-                            width: Val::Px(32.),
+                            margin: UiRect::all(Val::Px(50.0)),
                             ..default()
                         },
                     ));
-                });
-            children
-                .spawn((
-                    Button,
-                    Node {
-                        width: Val::Px(170.0),
-                        height: Val::Px(50.0),
-                        justify_content: JustifyContent::SpaceAround,
-                        align_items: AlignItems::Center,
-                        padding: UiRect::all(Val::Px(5.)),
-                        ..default()
-                    },
-                    BackgroundColor(Color::NONE),
-                    ButtonColors {
-                        normal: Color::NONE,
-                        hovered: Color::linear_rgb(0.25, 0.25, 0.25),
-                    },
-                    OpenLink("https://github.com/NiklasEi/bevy_game_template"),
-                ))
-                .with_children(|parent| {
-                    parent.spawn((
-                        Text::new("Open source"),
-                        TextFont {
-                            font_size: 15.0,
-                            ..default()
-                        },
-                        TextColor(Color::linear_rgb(0.9, 0.9, 0.9)),
-                    ));
-                    parent.spawn((
-                        ImageNode::new(textures.github.clone()),
-                        Node {
-                            width: Val::Px(32.),
-                            ..default()
-                        },
-                    ));
+
+                    parent
+                        .spawn((
+                            Button,
+                            button_node.clone(),
+                            background_color(&selected.0, &MenuButton::Play),
+                            MenuButton::Play,
+                        ))
+                        .with_children(|parent| {
+                            parent.spawn((
+                                Text::new("Play"),
+                                TextFont {
+                                    font_size: 64.0,
+                                    ..default()
+                                },
+                                TextColor(BUTTON_TEXT_COLOR),
+                            ));
+                        });
+
+                    parent
+                        .spawn((
+                            Button,
+                            button_node.clone(),
+                            background_color(&selected.0, &MenuButton::Highscore),
+                            MenuButton::Highscore,
+                        ))
+                        .with_children(|parent| {
+                            parent.spawn((
+                                Text::new("Highscore"),
+                                TextFont {
+                                    font_size: 64.0,
+                                    ..default()
+                                },
+                                TextColor(BUTTON_TEXT_COLOR),
+                            ));
+                        });
+
+                    parent
+                        .spawn((
+                            Button,
+                            button_node.clone(),
+                            background_color(&selected.0, &MenuButton::Quit),
+                            MenuButton::Quit,
+                        ))
+                        .with_children(|parent| {
+                            parent.spawn((
+                                Text::new("Quit"),
+                                TextFont {
+                                    font_size: 64.0,
+                                    ..default()
+                                },
+                                TextColor(BUTTON_TEXT_COLOR),
+                            ));
+                        });
                 });
         });
-}
 
-#[derive(Component)]
-struct ChangeState(GameState);
-
-#[derive(Component)]
-struct OpenLink(&'static str);
-
-fn click_play_button(
-    mut next_state: ResMut<NextState<GameState>>,
-    mut interaction_query: Query<
-        (
-            &Interaction,
-            &mut BackgroundColor,
-            &ButtonColors,
-            Option<&ChangeState>,
-            Option<&OpenLink>,
-        ),
-        (Changed<Interaction>, With<Button>),
-    >,
-) {
-    for (interaction, mut color, button_colors, change_state, open_link) in &mut interaction_query {
-        match *interaction {
-            Interaction::Pressed => {
-                if let Some(state) = change_state {
-                    next_state.set(state.0.clone());
-                } else if let Some(link) = open_link {
-                    if let Err(error) = webbrowser::open(link.0) {
-                        warn!("Failed to open link {error:?}");
-                    }
-                }
-            }
-            Interaction::Hovered => {
-                *color = button_colors.hovered.into();
-            }
-            Interaction::None => {
-                *color = button_colors.normal.into();
-            }
+    fn background_color(selected: &MenuButton, button: &MenuButton) -> BackgroundColor {
+        if selected == button {
+            return BUTTON_SELECTED_BACKGROUND_COLOR.into();
         }
-    }
-}
 
-fn cleanup_menu(mut commands: Commands, menu: Query<Entity, With<Menu>>) {
-    for entity in menu.iter() {
-        commands.entity(entity).despawn_recursive();
+        BUTTON_BACKGROUND_COLOR.into()
     }
 }

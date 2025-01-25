@@ -1,59 +1,79 @@
-// disable console on windows for release builds
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+mod game;
+mod highscore;
+mod menu;
 
-use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
-use bevy::winit::WinitWindows;
-use bevy::DefaultPlugins;
-use bevy_game::GamePlugin; // ToDo: Replace bevy_game with your new crate name.
-use std::io::Cursor;
-use winit::window::Icon;
+use bevy_embedded_assets::EmbeddedAssetPlugin;
+use game::resources::*;
+use game::systems::*;
+use prelude::TITLE;
+
+mod prelude {
+    use bevy::{
+        color::palettes::css::{BLUE, ORANGE, RED},
+        prelude::Color,
+    };
+
+    pub const TITLE: &str = "diplopod";
+
+    pub const CONSUMABLE_WIDTH: i32 = 39 + 1;
+    pub const CONSUMABLE_HEIGHT: i32 = 21 + 1;
+    pub const CONSUMABLE_SCALE_FACTOR: i32 = 2;
+    pub const ARENA_WIDTH: i32 = (CONSUMABLE_WIDTH + 1) * CONSUMABLE_SCALE_FACTOR;
+    pub const ARENA_HEIGHT: i32 = (CONSUMABLE_HEIGHT + 1) * CONSUMABLE_SCALE_FACTOR;
+    pub const AMOUNT_OF_FOOD: u32 = 16;
+    pub const AMOUNT_OF_POISON: u32 = 17;
+    pub const SPECIAL_SPAWN_INTERVAL: u32 = 16;
+
+    pub const DIPLOPOD_COLOR: Color = Color::Srgba(ORANGE);
+    pub const DIPLOPOD_IMMUNE_COLOR: Color = Color::WHITE;
+    pub const WALL_COLOR: Color = Color::srgb(0.25, 0.25, 0.25);
+    pub const FOOD_COLOR: Color = Color::srgb(0.0, 1.0, 0.0);
+    pub const SUPERFOOD_COLOR: Color = Color::Srgba(BLUE);
+    pub const POISON_OUTLINE_COLOR: Color = Color::Srgba(RED);
+    pub const POISON_FILL_COLOR: Color = Color::BLACK;
+    pub const ANTIDOTE_COLOR: Color = Color::WHITE;
+
+    pub const RADIUS_FACTOR: f32 = 0.9;
+}
+
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+pub enum GameState {
+    #[default]
+    Menu,
+    Game,
+    Highscore,
+}
 
 fn main() {
     App::new()
-        .insert_resource(ClearColor(Color::linear_rgb(0.4, 0.4, 0.4)))
-        .add_plugins(
-            DefaultPlugins
-                .set(WindowPlugin {
-                    primary_window: Some(Window {
-                        title: "Bevy game".to_string(), // ToDo
-                        // Bind to canvas included in `index.html`
-                        canvas: Some("#bevy".to_owned()),
-                        fit_canvas_to_parent: true,
-                        // Tells wasm not to override default event handling, like F5 and Ctrl+R
-                        prevent_default_event_handling: false,
-                        ..default()
-                    }),
-                    ..default()
-                })
-                .set(AssetPlugin {
-                    meta_check: AssetMetaCheck::Never,
+        .add_plugins((
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: TITLE.into(),
+                    resolution: (1149., 645.).into(),
                     ..default()
                 }),
+                ..default()
+            }),
+            EmbeddedAssetPlugin::default(), // does not work anymore in this game since Bevy 0.13.1
+            menu::MenuPlugin,
+            highscore::HighscorePlugin,
+            game::GamePlugin,
+        ))
+        .add_systems(Startup, setup::setup)
+        .add_systems(
+            Update,
+            setup::set_default_font.run_if(resource_exists::<DefaultFontHandle>),
         )
-        .add_plugins(GamePlugin)
-        .add_systems(Startup, set_window_icon)
+        .init_state::<GameState>()
+        .insert_resource(ClearColor(Color::BLACK))
         .run();
 }
 
-// Sets the icon on windows and X11
-fn set_window_icon(
-    windows: NonSend<WinitWindows>,
-    primary_window: Query<Entity, With<PrimaryWindow>>,
-) {
-    let primary_entity = primary_window.single();
-    let Some(primary) = windows.get_window(primary_entity) else {
-        return;
-    };
-    let icon_buf = Cursor::new(include_bytes!(
-        "../build/macos/AppIcon.iconset/icon_256x256.png"
-    ));
-    if let Ok(image) = image::load(icon_buf, image::ImageFormat::Png) {
-        let image = image.into_rgba8();
-        let (width, height) = image.dimensions();
-        let rgba = image.into_raw();
-        let icon = Icon::from_rgba(rgba, width, height).unwrap();
-        primary.set_window_icon(Some(icon));
-    };
+// Generic system that takes a component as a parameter, and will despawn all entities with that component
+fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
+    for entity in &to_despawn {
+        commands.entity(entity).despawn_recursive();
+    }
 }
