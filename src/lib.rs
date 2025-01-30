@@ -1,18 +1,50 @@
 pub mod components;
+pub mod control;
 pub mod events;
+pub mod graphics;
+pub mod highscore;
+pub mod menu;
+pub mod player_input;
 pub mod resources;
-pub mod systems;
+pub mod setup;
 
-use crate::despawn_screen;
-use crate::prelude::*;
-use crate::GameState;
+use bevy::color::palettes::css::*;
 use bevy::prelude::*;
 use bevy::time::common_conditions::on_timer;
 use bevy::utils::Duration;
 use bevy_prototype_lyon::prelude::*;
 use events::*;
 use resources::*;
-use systems::*;
+
+pub const TITLE: &str = "diplopod";
+
+pub const CONSUMABLE_WIDTH: i32 = 39 + 1;
+pub const CONSUMABLE_HEIGHT: i32 = 21 + 1;
+pub const CONSUMABLE_SCALE_FACTOR: i32 = 2;
+pub const ARENA_WIDTH: i32 = (CONSUMABLE_WIDTH + 1) * CONSUMABLE_SCALE_FACTOR;
+pub const ARENA_HEIGHT: i32 = (CONSUMABLE_HEIGHT + 1) * CONSUMABLE_SCALE_FACTOR;
+pub const AMOUNT_OF_FOOD: u32 = 16;
+pub const AMOUNT_OF_POISON: u32 = 17;
+pub const SPECIAL_SPAWN_INTERVAL: u32 = 16;
+
+pub const DIPLOPOD_COLOR: Color = Color::Srgba(ORANGE);
+pub const DIPLOPOD_IMMUNE_COLOR: Color = Color::WHITE;
+pub const WALL_COLOR: Color = Color::srgb(0.25, 0.25, 0.25);
+pub const FOOD_COLOR: Color = Color::srgb(0.0, 1.0, 0.0);
+pub const SUPERFOOD_COLOR: Color = Color::Srgba(BLUE);
+pub const POISON_OUTLINE_COLOR: Color = Color::Srgba(RED);
+pub const POISON_FILL_COLOR: Color = Color::BLACK;
+pub const ANTIDOTE_COLOR: Color = Color::WHITE;
+
+pub const RADIUS_FACTOR: f32 = 0.9;
+
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+pub enum GameState {
+    #[default]
+    Menu,
+    Game,
+    Highscore,
+}
 
 #[derive(Component)]
 pub struct OnGameScreen;
@@ -27,7 +59,12 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(ShapePlugin)
+        app.add_plugins((ShapePlugin, highscore::HighscorePlugin, menu::MenuPlugin))
+            .add_systems(Startup, setup::setup)
+            .add_systems(
+                Update,
+                setup::set_default_font.run_if(resource_exists::<resources::DefaultFontHandle>),
+            )
             .add_systems(
                 OnEnter(GameState::Game),
                 (
@@ -96,6 +133,8 @@ impl Plugin for GamePlugin {
                     .run_if(not(resource_exists::<Paused>)),
             )
             .add_systems(OnExit(GameState::Game), despawn_screen::<OnGameScreen>)
+            .init_state::<crate::GameState>()
+            .insert_resource(ClearColor(Color::BLACK))
             .insert_resource(TileSize::default())
             .insert_resource(UpperLeft::default())
             .insert_resource(DiplopodSegments::default())
@@ -108,5 +147,12 @@ impl Plugin for GamePlugin {
             .add_event::<Growth>()
             .add_event::<SpawnConsumables>()
             .add_event::<ShowMessage>();
+    }
+}
+
+// Generic system that takes a component as a parameter, and will despawn all entities with that component
+pub fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
+    for entity in &to_despawn {
+        commands.entity(entity).despawn_recursive();
     }
 }

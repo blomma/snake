@@ -7,11 +7,10 @@ use bevy::window::WindowResized;
 
 use bevy_prototype_lyon::prelude::*;
 
-use crate::game::components::*;
-use crate::game::events::ShowMessage;
-use crate::game::resources::ImmunityTime;
-use crate::game::OnGameScreen;
-use crate::prelude::*;
+use crate::components::*;
+use crate::events::ShowMessage;
+use crate::resources::ImmunityTime;
+use crate::OnGameScreen;
 use crate::TileSize;
 use crate::UpperLeft;
 
@@ -80,14 +79,14 @@ fn resize_consumables(
     mut tile_size: ResMut<TileSize>,
     mut upper_left: ResMut<UpperLeft>,
 ) {
-    tile_size.0 = cmp::min(width / ARENA_WIDTH, height / ARENA_HEIGHT);
-    upper_left.x = (width - (ARENA_WIDTH - 1) * tile_size.0) / 2;
-    upper_left.y = (height - (ARENA_HEIGHT - 1) * tile_size.0) / 2;
+    tile_size.0 = cmp::min(width / crate::ARENA_WIDTH, height / crate::ARENA_HEIGHT);
+    upper_left.x = (width - (crate::ARENA_WIDTH - 1) * tile_size.0) / 2;
+    upper_left.y = (height - (crate::ARENA_HEIGHT - 1) * tile_size.0) / 2;
 
     // Resize food and poison
 
     let shape = shapes::Circle {
-        radius: tile_size.0 as f32 * RADIUS_FACTOR,
+        radius: tile_size.0 as f32 * crate::RADIUS_FACTOR,
         center: Vec2::new(0., 0.),
     };
 
@@ -112,7 +111,7 @@ fn resize_consumables(
 
     for (mut path, mut stroke) in paths.p2().iter_mut() {
         *path = ShapePath::build_as(&cross);
-        *stroke = Stroke::new(ANTIDOTE_COLOR, tile_size.0 as f32 * 0.9);
+        *stroke = Stroke::new(crate::ANTIDOTE_COLOR, tile_size.0 as f32 * 0.9);
     }
 
     // Resize walls
@@ -166,10 +165,10 @@ pub fn position_translation(
     if let Ok(window) = windows.get_single() {
         for (pos, mut transform) in q.iter_mut() {
             transform.translation = Vec3::new(
-                (pos.x * tile_size.0 * CONSUMABLE_SCALE_FACTOR + upper_left.x
+                (pos.x * tile_size.0 * crate::CONSUMABLE_SCALE_FACTOR + upper_left.x
                     - window.width() as i32 / 2
                     + tile_size.0 / 2) as f32,
-                (pos.y * tile_size.0 * CONSUMABLE_SCALE_FACTOR + upper_left.y
+                (pos.y * tile_size.0 * crate::CONSUMABLE_SCALE_FACTOR + upper_left.y
                     - window.height() as i32 / 2
                     + tile_size.0 / 2) as f32,
                 1.0,
@@ -191,23 +190,23 @@ pub fn change_color(
 ) {
     if immunity_time.0 > 2 {
         for (mut fill, mut stroke) in query.iter_mut() {
-            fill.color = DIPLOPOD_IMMUNE_COLOR;
-            stroke.color = DIPLOPOD_IMMUNE_COLOR;
+            fill.color = crate::DIPLOPOD_IMMUNE_COLOR;
+            stroke.color = crate::DIPLOPOD_IMMUNE_COLOR;
         }
     } else if immunity_time.0 > 0 {
         for (mut fill, mut stroke) in query.iter_mut() {
-            if fill.color == DIPLOPOD_IMMUNE_COLOR {
-                fill.color = DIPLOPOD_COLOR;
-                stroke.color = DIPLOPOD_COLOR;
+            if fill.color == crate::DIPLOPOD_IMMUNE_COLOR {
+                fill.color = crate::DIPLOPOD_COLOR;
+                stroke.color = crate::DIPLOPOD_COLOR;
             } else {
-                fill.color = DIPLOPOD_IMMUNE_COLOR;
-                stroke.color = DIPLOPOD_IMMUNE_COLOR;
+                fill.color = crate::DIPLOPOD_IMMUNE_COLOR;
+                stroke.color = crate::DIPLOPOD_IMMUNE_COLOR;
             }
         }
     } else {
         for (mut fill, mut stroke) in query.iter_mut() {
-            fill.color = DIPLOPOD_COLOR;
-            stroke.color = DIPLOPOD_COLOR;
+            fill.color = crate::DIPLOPOD_COLOR;
+            stroke.color = crate::DIPLOPOD_COLOR;
         }
     }
 }

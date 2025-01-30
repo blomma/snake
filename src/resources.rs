@@ -1,8 +1,8 @@
 use bevy::prelude::*;
+use rand::rng;
 use rand::seq::SliceRandom;
-use rand::thread_rng;
 
-use crate::game::components::{DiplopodPosition, Position};
+use crate::components::{DiplopodPosition, Position};
 
 #[derive(Default, Resource)]
 pub struct DiplopodSegments(pub Vec<Entity>);
@@ -33,13 +33,13 @@ impl FreePositions {
             }
         }
 
-        positions.shuffle(&mut thread_rng());
+        positions.shuffle(&mut rng());
 
         positions
     }
 
     pub fn shuffle(&mut self) {
-        self.positions.shuffle(&mut thread_rng());
+        self.positions.shuffle(&mut rng());
     }
 
     pub fn remove(&mut self, position: &Position) {

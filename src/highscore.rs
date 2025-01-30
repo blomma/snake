@@ -1,3 +1,4 @@
+use crate::TITLE;
 use anyhow::anyhow;
 use anyhow::Result;
 use bevy::color::palettes::css::ANTIQUE_WHITE;
@@ -8,10 +9,8 @@ use directories::ProjectDirs;
 use std::fs::File;
 use std::io::Write;
 
-use crate::game::resources::{self, Highscore, Lastscore};
-use crate::prelude::TITLE;
-
-use super::{despawn_screen, GameState};
+use crate::resources::{self, Highscore, Lastscore};
+use crate::GameState;
 
 /// Adds a screen that shows the highscore of the current session and
 /// the score of the last game.
@@ -48,7 +47,7 @@ impl Plugin for HighscorePlugin {
             )
             .add_systems(
                 OnExit(GameState::Highscore),
-                despawn_screen::<OnHighscoreScreen>,
+                crate::despawn_screen::<OnHighscoreScreen>,
             )
             .add_systems(
                 Update,

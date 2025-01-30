@@ -1,5 +1,5 @@
-use crate::game::components::*;
-use crate::game::resources::Paused;
+use crate::components::*;
+use crate::resources::Paused;
 use bevy::prelude::*;
 
 pub fn keyboard(keyboard_input: Res<ButtonInput<KeyCode>>, mut heads: Query<&mut DiplopodHead>) {

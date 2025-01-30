@@ -1,7 +1,5 @@
 use bevy::prelude::*;
 
-use crate::prelude::CONSUMABLE_SCALE_FACTOR;
-
 #[derive(Component)]
 pub struct DiplopodHead {
     pub direction: Vec2,
@@ -19,8 +17,8 @@ pub struct DiplopodPosition {
 impl DiplopodPosition {
     pub fn to_position(self) -> Position {
         Position {
-            x: self.x / CONSUMABLE_SCALE_FACTOR,
-            y: self.y / CONSUMABLE_SCALE_FACTOR,
+            x: self.x / crate::CONSUMABLE_SCALE_FACTOR,
+            y: self.y / crate::CONSUMABLE_SCALE_FACTOR,
         }
     }
 }

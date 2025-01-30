@@ -1,19 +1,20 @@
+use crate::GameState;
+use crate::TITLE;
 use bevy::{app::AppExit, color::palettes::css::ANTIQUE_WHITE, prelude::*};
-
-use crate::prelude::TITLE;
-
-use super::{despawn_screen, GameState};
 
 pub struct MenuPlugin;
 
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Menu), setup_menu)
+        app.add_systems(OnEnter(crate::GameState::Menu), setup_menu)
             .add_systems(
                 Update,
-                (gamepad, keyboard).run_if(in_state(GameState::Menu)),
+                (gamepad, keyboard).run_if(in_state(crate::GameState::Menu)),
             )
-            .add_systems(OnExit(GameState::Menu), despawn_screen::<OnMenuScreen>)
+            .add_systems(
+                OnExit(crate::GameState::Menu),
+                crate::despawn_screen::<OnMenuScreen>,
+            )
             .insert_resource(Selected::default());
     }
 }

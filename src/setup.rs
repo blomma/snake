@@ -1,5 +1,4 @@
-use crate::game::resources::DefaultFontHandle;
-use crate::game::resources::Sounds;
+use crate::resources::{DefaultFontHandle, Sounds};
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 

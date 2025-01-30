@@ -1,4 +1,4 @@
-use crate::game::components::DiplopodPosition;
+use crate::components::DiplopodPosition;
 use bevy::ecs::event::Event;
 
 #[derive(Event)]
