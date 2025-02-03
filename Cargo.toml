@@ -39,7 +39,6 @@ dev = ["bevy/dynamic_linking"]
 [dependencies]
 bevy = { version = "0.15.1", default-features = false, features = [
     "animation",
-    "bevy_audio",
     "bevy_asset",
     "bevy_color",
     "bevy_core_pipeline",
@@ -69,9 +68,7 @@ bevy = { version = "0.15.1", default-features = false, features = [
     "tonemapping_luts",
     "webgl2",
     "x11",
-    "vorbis",
 ] }
-# bevy_kira_audio = { version = "0.22.0", features = ["android_shared_stdcxx"] }
 bevy_asset_loader = { version = "0.22" }
 webbrowser = { version = "1", features = ["hardened"] }
 anyhow = "1"

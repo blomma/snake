@@ -39,13 +39,27 @@ pub struct Food;
 pub struct Poison;
 
 #[derive(Component)]
-pub struct Superfood;
+pub struct SuperFood;
 
 #[derive(Component)]
-pub struct Antidote;
+pub struct AntiDote;
 
 #[derive(Component)]
 pub struct FadingText(pub f32);
 
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+pub enum GameState {
+    #[default]
+    Menu,
+    Game,
+    Highscore,
+}
+
 #[derive(Component)]
-pub struct AntidoteSound;
+pub struct OnGameScreen;
+
+#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
+pub enum Phase {
+    Input,
+    Movement,
+}

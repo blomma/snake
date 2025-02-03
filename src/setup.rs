@@ -1,4 +1,6 @@
-use crate::resources::{DefaultFontHandle, Sounds};
+use std::cmp;
+
+use crate::resources::{DefaultFontHandle, TileSize, UpperLeft};
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
@@ -6,24 +8,24 @@ pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut windows: Query<&mut Window, With<PrimaryWindow>>,
+    mut tile_size: ResMut<TileSize>,
+    mut upper_left: ResMut<UpperLeft>,
 ) {
     commands.spawn(Camera2d);
-
-    let sounds = Sounds {
-        eat_food: asset_server.load("audio/eat_food.ogg"),
-        eat_poison: asset_server.load("audio/eat_poison.ogg"),
-        special_spawn: asset_server.load("audio/special_spawn.ogg"),
-        super_food: asset_server.load("audio/super_food.ogg"),
-        antidote: asset_server.load("audio/antidote.ogg"),
-        game_over: asset_server.load("audio/game_over.ogg"),
-    };
-    commands.insert_resource(sounds);
 
     let font = asset_server.load("fonts/AllertaStencil-Regular.ttf");
     commands.insert_resource(DefaultFontHandle(font));
 
     if let Ok(mut window) = windows.get_single_mut() {
         window.cursor_options.visible = false;
+
+        tile_size.0 = cmp::min(
+            window.width() as i32 / crate::ARENA_WIDTH,
+            window.height() as i32 / crate::ARENA_HEIGHT,
+        );
+
+        upper_left.x = (window.width() as i32 - (crate::ARENA_WIDTH - 1) * tile_size.0) / 2;
+        upper_left.y = (window.height() as i32 - (crate::ARENA_HEIGHT - 1) * tile_size.0) / 2;
     }
 }
 

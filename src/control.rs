@@ -76,6 +76,7 @@ pub fn init_wall(
     mut free_positions: ResMut<FreePositions>,
     tile_size: Res<TileSize>,
 ) {
+    println!("{} tile_size", tile_size.0);
     let shape = shapes::Rectangle {
         extents: Vec2::splat(tile_size.0 as f32 * 2.0),
         origin: shapes::RectangleOrigin::Center,
@@ -293,7 +294,7 @@ fn spawn_random_superfood(
                 },
                 Stroke::new(crate::SUPERFOOD_COLOR, 7.5),
             ))
-            .insert(Superfood)
+            .insert(SuperFood)
             .insert(OnGameScreen)
             .insert(pos);
         free_positions.remove(&pos);
@@ -322,7 +323,7 @@ fn spawn_random_antidote(
                 },
                 Stroke::new(crate::ANTIDOTE_COLOR, tile_size.0 as f32 * 0.9),
             ))
-            .insert(Antidote)
+            .insert(AntiDote)
             .insert(OnGameScreen)
             .insert(pos);
         free_positions.remove(&pos);
@@ -336,12 +337,11 @@ pub fn spawn_consumables(
     mut spawn_consumables_reader: EventReader<SpawnConsumables>,
     mut diplopod_positions: Query<&mut DiplopodPosition>,
     positions: Query<&Position>,
-    superfood: Query<Entity, With<Superfood>>,
-    antidotes: Query<Entity, With<Antidote>>,
+    superfood: Query<Entity, With<SuperFood>>,
+    antidotes: Query<Entity, With<AntiDote>>,
     mut free_positions: ResMut<FreePositions>,
     mut last_special_spawn: ResMut<LastSpecialSpawn>,
     tile_size: Res<TileSize>,
-    sounds: Res<Sounds>,
 ) {
     if let Some(spawn_event) = spawn_consumables_reader.read().next() {
         let segment_positions = segments
@@ -406,11 +406,6 @@ pub fn spawn_consumables(
                 &mut free_positions,
                 &tile_size,
             );
-
-            commands.spawn((
-                AudioPlayer(sounds.special_spawn.clone()),
-                PlaybackSettings::DESPAWN,
-            ));
         }
     }
 }
@@ -458,14 +453,13 @@ pub fn eat(
     mut game_over_writer: EventWriter<GameOver>,
     mut show_message_writer: EventWriter<ShowMessage>,
     food_positions: Query<(Entity, &Position), With<Food>>,
-    superfood_positions: Query<(Entity, &Position), With<Superfood>>,
+    superfood_positions: Query<(Entity, &Position), With<SuperFood>>,
     poison_positions: Query<(Entity, &Position), With<Poison>>,
-    antidote_positions: Query<(Entity, &Position), With<Antidote>>,
+    antidote_positions: Query<(Entity, &Position), With<AntiDote>>,
     head_positions: Query<&DiplopodPosition, With<DiplopodHead>>,
     wall_positions: Query<(Entity, &Position), With<Wall>>,
     mut free_positions: ResMut<FreePositions>,
     mut immunity_time: ResMut<ImmunityTime>,
-    sounds: Res<Sounds>,
 ) {
     for head_pos in head_positions.iter() {
         for (ent, food_pos) in food_positions.iter() {
@@ -479,11 +473,6 @@ pub fn eat(
                     regular: true,
                     new_segments: 1,
                 });
-
-                commands.spawn((
-                    AudioPlayer(sounds.eat_food.clone()),
-                    PlaybackSettings::DESPAWN,
-                ));
             }
         }
 
@@ -504,11 +493,6 @@ pub fn eat(
                     regular: false,
                     new_segments,
                 });
-
-                commands.spawn((
-                    AudioPlayer(sounds.super_food.clone()),
-                    PlaybackSettings::DESPAWN,
-                ));
             }
         }
 
@@ -518,12 +502,7 @@ pub fn eat(
                 free_positions.positions.push(*antidote_pos);
                 immunity_time.0 += 10;
 
-                commands.spawn((
-                    AudioPlayer(sounds.antidote.clone()),
-                    PlaybackSettings::LOOP,
-                    AntidoteSound,
-                    OnGameScreen,
-                ));
+                commands.spawn((OnGameScreen,));
             }
         }
 
@@ -534,11 +513,6 @@ pub fn eat(
                     free_positions.positions.push(*poison_pos);
                     free_positions.shuffle();
                     growth_writer.send(Growth(1));
-
-                    commands.spawn((
-                        AudioPlayer(sounds.eat_poison.clone()),
-                        PlaybackSettings::DESPAWN,
-                    ));
                 } else {
                     game_over_writer.send(GameOver);
                 }
@@ -584,7 +558,7 @@ pub fn growth(
 }
 
 pub fn move_antidote(
-    mut antidotes: Query<&mut Position, With<Antidote>>,
+    mut antidotes: Query<&mut Position, With<AntiDote>>,
     mut segment_positions: Query<&mut DiplopodPosition, With<DiplopodSegment>>,
 ) {
     for mut pos in antidotes.iter_mut() {
@@ -620,42 +594,18 @@ pub fn limit_immunity(mut immunity_time: ResMut<ImmunityTime>) {
     }
 }
 
-pub fn control_antidote_sound(
-    mut commands: Commands,
-    immunity_time: Res<ImmunityTime>,
-    antidote_sound: Query<(&AudioSink, Entity), With<AntidoteSound>>,
-) {
-    if immunity_time.0 > 2 {
-        // keep the sound
-    } else if immunity_time.0 > 0 {
-        if let Ok(sound) = antidote_sound.get_single() {
-            sound.0.toggle();
-        }
-    } else if let Ok(sound) = antidote_sound.get_single() {
-        sound.0.stop();
-        commands.entity(sound.1).despawn();
-    }
-}
-
 #[allow(clippy::too_many_arguments)]
 pub fn game_over(
-    mut commands: Commands,
     mut reader: EventReader<GameOver>,
     segments: Query<Entity, With<DiplopodSegment>>,
     mut free_positions: ResMut<FreePositions>,
     mut last_special_spawn: ResMut<LastSpecialSpawn>,
     mut immunity_time: ResMut<ImmunityTime>,
-    sounds: Res<Sounds>,
     mut game_state: ResMut<NextState<GameState>>,
     mut lastscore: ResMut<Lastscore>,
     mut highscore: ResMut<Highscore>,
 ) {
     if reader.read().next().is_some() {
-        commands.spawn((
-            AudioPlayer(sounds.game_over.clone()),
-            PlaybackSettings::DESPAWN,
-        ));
-
         lastscore.0 = 0;
         for _ in segments.iter() {
             lastscore.0 += 1;

@@ -2,17 +2,18 @@ pub mod components;
 pub mod control;
 pub mod events;
 pub mod graphics;
-pub mod highscore;
 pub mod menu;
 pub mod player_input;
 pub mod resources;
 pub mod setup;
+pub mod systems;
 
 use bevy::color::palettes::css::*;
 use bevy::prelude::*;
 use bevy::time::common_conditions::on_timer;
 use bevy::utils::Duration;
 use bevy_prototype_lyon::prelude::*;
+use components::{GameState, OnGameScreen, Phase};
 use events::*;
 use resources::*;
 
@@ -38,115 +39,92 @@ pub const ANTIDOTE_COLOR: Color = Color::WHITE;
 
 pub const RADIUS_FACTOR: f32 = 0.9;
 
-#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
-pub enum GameState {
-    #[default]
-    Menu,
-    Game,
-    Highscore,
-}
-
-#[derive(Component)]
-pub struct OnGameScreen;
-
-#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
-pub enum Phase {
-    Input,
-    Movement,
-}
-
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((ShapePlugin, highscore::HighscorePlugin, menu::MenuPlugin))
-            .add_systems(Startup, setup::setup)
-            .add_systems(
-                Update,
-                setup::set_default_font.run_if(resource_exists::<resources::DefaultFontHandle>),
+        app.add_plugins((
+            ShapePlugin,
+            systems::highscore::HighscorePlugin,
+            menu::MenuPlugin,
+            graphics::GraphicsPlugin,
+            graphics::food::FoodPlugin,
+            graphics::poison::PoisonPlugin,
+            graphics::superfood::SuperFoodPlugin,
+            graphics::antidote::AntiDotePlugin,
+            graphics::wall::WallPlugin,
+            graphics::diplopod_segments::DiplopodSegmentsPlugin,
+        ))
+        .add_systems(Startup, setup::setup)
+        .add_systems(
+            Update,
+            setup::set_default_font.run_if(resource_exists::<resources::DefaultFontHandle>),
+        )
+        .add_systems(
+            OnEnter(GameState::Game),
+            (
+                control::init_diplopod,
+                control::init_wall,
+                control::init_food,
+                control::init_poison,
             )
-            .add_systems(
-                OnEnter(GameState::Game),
+                .chain(),
+        )
+        .add_systems(
+            Update,
+            (
                 (
-                    control::init_diplopod,
-                    control::init_wall,
-                    control::init_food,
-                    control::init_poison,
+                    player_input::keyboard,
+                    player_input::gamepad,
+                    player_input::pause,
+                    control::move_antidote.run_if(on_timer(Duration::from_millis(500))),
                 )
-                    .chain(),
-            )
-            .add_systems(
-                Update,
-                (
-                    (graphics::on_window_created, graphics::on_window_resized),
-                    (
-                        player_input::keyboard,
-                        player_input::gamepad,
-                        player_input::pause,
-                        control::move_antidote.run_if(on_timer(Duration::from_millis(500))),
-                    )
-                        .in_set(Phase::Input)
-                        .run_if(in_state(GameState::Game))
-                        .run_if(not(resource_exists::<Paused>)),
-                    (player_input::unpause,)
-                        .in_set(Phase::Input)
-                        .run_if(in_state(GameState::Game))
-                        .run_if(resource_exists::<Paused>),
-                    (
-                        graphics::diplopod_position_translation,
-                        graphics::position_translation,
-                    )
-                        .after(Phase::Movement)
-                        .run_if(in_state(GameState::Game)),
-                    (graphics::rotate_superfood,)
-                        .after(Phase::Movement)
-                        .run_if(in_state(GameState::Game))
-                        .run_if(not(resource_exists::<Paused>)),
-                    (
-                        control::limit_immunity.run_if(on_timer(Duration::from_secs(1))),
-                        graphics::fade_text.run_if(on_timer(Duration::from_millis(200))),
-                    )
-                        .run_if(in_state(GameState::Game))
-                        .run_if(not(resource_exists::<Paused>)),
-                    control::game_over
-                        .after(Phase::Movement)
-                        .run_if(in_state(GameState::Game))
-                        .run_if(on_event::<GameOver>),
-                ),
-            )
-            .add_systems(
-                FixedUpdate,
-                (
-                    (
-                        control::movement
-                            .after(Phase::Input)
-                            .in_set(Phase::Movement),
-                        control::eat,
-                        control::spawn_consumables.run_if(on_event::<SpawnConsumables>),
-                        graphics::show_message,
-                        control::growth.run_if(on_event::<Growth>),
-                    )
-                        .chain(),
-                    (graphics::change_color, control::control_antidote_sound),
-                )
+                    .in_set(Phase::Input)
                     .run_if(in_state(GameState::Game))
                     .run_if(not(resource_exists::<Paused>)),
+                (player_input::unpause,)
+                    .in_set(Phase::Input)
+                    .run_if(in_state(GameState::Game))
+                    .run_if(resource_exists::<Paused>),
+                (control::limit_immunity.run_if(on_timer(Duration::from_secs(1))),)
+                    .run_if(in_state(GameState::Game))
+                    .run_if(not(resource_exists::<Paused>)),
+                control::game_over
+                    .after(Phase::Movement)
+                    .run_if(in_state(GameState::Game))
+                    .run_if(on_event::<GameOver>),
+            ),
+        )
+        .add_systems(
+            FixedUpdate,
+            ((
+                control::movement
+                    .after(Phase::Input)
+                    .in_set(Phase::Movement),
+                control::eat,
+                control::spawn_consumables.run_if(on_event::<SpawnConsumables>),
+                graphics::show_message,
+                control::growth.run_if(on_event::<Growth>),
             )
-            .add_systems(OnExit(GameState::Game), despawn_screen::<OnGameScreen>)
-            .init_state::<crate::GameState>()
-            .insert_resource(ClearColor(Color::BLACK))
-            .insert_resource(TileSize::default())
-            .insert_resource(UpperLeft::default())
-            .insert_resource(DiplopodSegments::default())
-            .insert_resource(LastTailPosition::default())
-            .insert_resource(LastSpecialSpawn::default())
-            .insert_resource(ImmunityTime::default())
-            .insert_resource(FreePositions::new(CONSUMABLE_WIDTH, CONSUMABLE_HEIGHT))
-            .insert_resource(Time::<Fixed>::from_seconds(0.075))
-            .add_event::<GameOver>()
-            .add_event::<Growth>()
-            .add_event::<SpawnConsumables>()
-            .add_event::<ShowMessage>();
+                .chain(),)
+                .run_if(in_state(GameState::Game))
+                .run_if(not(resource_exists::<Paused>)),
+        )
+        .add_systems(OnExit(GameState::Game), despawn_screen::<OnGameScreen>)
+        .init_state::<crate::GameState>()
+        .insert_resource(ClearColor(Color::BLACK))
+        .insert_resource(TileSize::default())
+        .insert_resource(UpperLeft::default())
+        .insert_resource(DiplopodSegments::default())
+        .insert_resource(LastTailPosition::default())
+        .insert_resource(LastSpecialSpawn::default())
+        .insert_resource(ImmunityTime::default())
+        .insert_resource(FreePositions::new(CONSUMABLE_WIDTH, CONSUMABLE_HEIGHT))
+        .insert_resource(Time::<Fixed>::from_seconds(0.075))
+        .add_event::<GameOver>()
+        .add_event::<Growth>()
+        .add_event::<SpawnConsumables>()
+        .add_event::<ShowMessage>();
     }
 }
 
