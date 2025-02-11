@@ -6,49 +6,9 @@ use bevy_prototype_lyon::prelude::*;
 
 use crate::components::*;
 use crate::events::*;
+use crate::graphics::wall::Wall;
 use crate::resources::*;
-use crate::GameState;
 use crate::OnGameScreen;
-
-pub fn init_diplopod(
-    mut commands: Commands,
-    mut segments: ResMut<DiplopodSegments>,
-    tile_size: Res<TileSize>,
-) {
-    spawn_diplopod(&mut commands, &mut segments, tile_size);
-}
-
-fn spawn_diplopod(
-    commands: &mut Commands,
-    segments: &mut ResMut<DiplopodSegments>,
-    tile_size: Res<TileSize>,
-) {
-    let shape = shapes::Rectangle {
-        extents: Vec2::splat(tile_size.0 as f32),
-        origin: shapes::RectangleOrigin::Center,
-        radii: None,
-    };
-
-    segments.0 = vec![commands
-        .spawn((
-            ShapeBundle {
-                path: GeometryBuilder::build_as(&shape),
-                ..default()
-            },
-            Fill::color(crate::DIPLOPOD_COLOR),
-            Stroke::color(crate::DIPLOPOD_COLOR),
-        ))
-        .insert(DiplopodHead {
-            direction: Vec2::ZERO,
-        })
-        .insert(DiplopodSegment)
-        .insert(DiplopodPosition {
-            x: crate::ARENA_WIDTH / 2,
-            y: crate::ARENA_HEIGHT / 2,
-        })
-        .insert(OnGameScreen)
-        .id()];
-}
 
 fn spawn_segment(
     commands: &mut Commands,
@@ -69,142 +29,6 @@ fn spawn_segment(
         .insert(position)
         .insert(OnGameScreen)
         .id()
-}
-
-pub fn init_wall(
-    mut commands: Commands,
-    mut free_positions: ResMut<FreePositions>,
-    tile_size: Res<TileSize>,
-) {
-    println!("{} tile_size", tile_size.0);
-    let shape = shapes::Rectangle {
-        extents: Vec2::splat(tile_size.0 as f32 * 2.0),
-        origin: shapes::RectangleOrigin::Center,
-        radii: None,
-    };
-
-    for x in 0..crate::CONSUMABLE_WIDTH + 1 {
-        spawn_wall(
-            &mut commands,
-            &mut free_positions,
-            Position { x, y: 0 },
-            &shape,
-        );
-        spawn_wall(
-            &mut commands,
-            &mut free_positions,
-            Position {
-                x,
-                y: crate::CONSUMABLE_HEIGHT,
-            },
-            &shape,
-        );
-    }
-
-    for y in 1..crate::CONSUMABLE_HEIGHT {
-        spawn_wall(
-            &mut commands,
-            &mut free_positions,
-            Position { x: 0, y },
-            &shape,
-        );
-        spawn_wall(
-            &mut commands,
-            &mut free_positions,
-            Position {
-                x: crate::CONSUMABLE_WIDTH,
-                y,
-            },
-            &shape,
-        );
-    }
-}
-
-fn spawn_wall(
-    commands: &mut Commands,
-    free_positions: &mut ResMut<FreePositions>,
-    pos: Position,
-    shape: &Rectangle,
-) {
-    commands
-        .spawn((
-            ShapeBundle {
-                path: GeometryBuilder::build_as(shape),
-                ..default()
-            },
-            Fill::color(crate::WALL_COLOR),
-            Stroke::color(crate::WALL_COLOR),
-        ))
-        .insert(Wall)
-        .insert(OnGameScreen)
-        .insert(pos);
-
-    free_positions.remove(&pos);
-}
-
-pub fn init_food(
-    mut commands: Commands,
-    mut free_positions: ResMut<FreePositions>,
-    tile_size: Res<TileSize>,
-) {
-    spawn_food(&mut commands, &mut free_positions, &tile_size);
-}
-
-fn spawn_food(
-    commands: &mut Commands,
-    free_positions: &mut ResMut<FreePositions>,
-    tile_size: &Res<TileSize>,
-) {
-    let segment_positions = vec![DiplopodPosition {
-        x: crate::ARENA_WIDTH / 2,
-        y: crate::ARENA_HEIGHT / 2,
-    }
-    .to_position()];
-
-    let mut position_candidates = free_positions.clone();
-    position_candidates.remove_all(&segment_positions);
-
-    spawn_random_food(
-        crate::AMOUNT_OF_FOOD,
-        commands,
-        &mut position_candidates,
-        free_positions,
-        tile_size,
-    );
-}
-
-fn spawn_random_food(
-    amount: u32,
-    commands: &mut Commands,
-    position_candidates: &mut FreePositions,
-    free_positions: &mut ResMut<FreePositions>,
-    tile_size: &Res<TileSize>,
-) {
-    let shape = shapes::Circle {
-        radius: tile_size.0 as f32 * crate::RADIUS_FACTOR,
-        center: Vec2::new(0., 0.),
-    };
-
-    for _ in 0..amount {
-        match position_candidates.positions.pop() {
-            None => break,
-            Some(pos) => {
-                commands
-                    .spawn((
-                        ShapeBundle {
-                            path: GeometryBuilder::build_as(&shape),
-                            ..default()
-                        },
-                        Fill::color(crate::FOOD_COLOR),
-                        Stroke::color(crate::FOOD_COLOR),
-                    ))
-                    .insert(Food)
-                    .insert(OnGameScreen)
-                    .insert(pos);
-                free_positions.remove(&pos);
-            }
-        }
-    }
 }
 
 pub fn init_poison(
@@ -330,10 +154,9 @@ fn spawn_random_antidote(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn spawn_consumables(
     mut commands: Commands,
-    segments: ResMut<DiplopodSegments>,
+    segments: Res<DiplopodSegments>,
     mut spawn_consumables_reader: EventReader<SpawnConsumables>,
     mut diplopod_positions: Query<&mut DiplopodPosition>,
     positions: Query<&Position>,
@@ -355,14 +178,6 @@ pub fn spawn_consumables(
         position_candidates.remove_all(&segment_positions);
 
         if spawn_event.regular {
-            spawn_random_food(
-                1,
-                &mut commands,
-                &mut position_candidates,
-                &mut free_positions,
-                &tile_size,
-            );
-
             spawn_random_poison(
                 1,
                 &mut commands,
@@ -591,35 +406,5 @@ pub fn move_antidote(
 pub fn limit_immunity(mut immunity_time: ResMut<ImmunityTime>) {
     if immunity_time.0 > 0 {
         immunity_time.0 -= 1;
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
-pub fn game_over(
-    mut reader: EventReader<GameOver>,
-    segments: Query<Entity, With<DiplopodSegment>>,
-    mut free_positions: ResMut<FreePositions>,
-    mut last_special_spawn: ResMut<LastSpecialSpawn>,
-    mut immunity_time: ResMut<ImmunityTime>,
-    mut game_state: ResMut<NextState<GameState>>,
-    mut lastscore: ResMut<Lastscore>,
-    mut highscore: ResMut<Highscore>,
-) {
-    if reader.read().next().is_some() {
-        lastscore.0 = 0;
-        for _ in segments.iter() {
-            lastscore.0 += 1;
-        }
-
-        if lastscore.0 > highscore.0 {
-            highscore.0 = lastscore.0;
-        }
-
-        free_positions.reset();
-
-        last_special_spawn.0 = 0;
-        immunity_time.0 = 0;
-
-        game_state.set(GameState::Highscore);
     }
 }

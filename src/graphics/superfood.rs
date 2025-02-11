@@ -1,7 +1,7 @@
 use std::cmp;
 
 use bevy::{
-    app::{App, Plugin, Startup, Update},
+    app::{App, Plugin, Update},
     ecs::{
         event::EventReader,
         query::With,
@@ -15,7 +15,7 @@ use bevy::{
     state::condition::in_state,
     time::Time,
     transform::components::Transform,
-    window::{PrimaryWindow, Window, WindowResized},
+    window::{WindowCreated, WindowResized},
 };
 use bevy_prototype_lyon::{
     entity::Path,
@@ -24,7 +24,7 @@ use bevy_prototype_lyon::{
 
 use crate::{
     components::SuperFood,
-    resources::{Paused, TileSize, UpperLeft},
+    resources::{self, Paused, TileSize, UpperLeft},
     GameState, Phase,
 };
 
@@ -32,64 +32,56 @@ pub struct SuperFoodPlugin;
 
 impl Plugin for SuperFoodPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, on_window_created).add_systems(
-            Update,
-            (
-                on_window_resized,
-                (rotate_superfood,)
-                    .after(Phase::Movement)
-                    .run_if(in_state(GameState::Game))
-                    .run_if(not(resource_exists::<Paused>)),
-            ),
-        );
+        app
+            // .add_systems(
+            //     Update,
+            //     on_window_created
+            //         .run_if(resource_exists::<resources::TileSize>)
+            //         .run_if(resource_exists::<resources::UpperLeft>),
+            // )
+            .add_systems(
+                Update,
+                (
+                    on_window_resized,
+                    (rotate_superfood,)
+                        .after(Phase::Movement)
+                        .run_if(in_state(GameState::Game))
+                        .run_if(not(resource_exists::<Paused>)),
+                ),
+            );
     }
 }
 
 fn on_window_created(
-    windows: Query<&Window, With<PrimaryWindow>>,
+    mut reader: EventReader<WindowCreated>,
     paths: Query<&mut Path, With<SuperFood>>,
     tile_size: ResMut<TileSize>,
-    upper_left: ResMut<UpperLeft>,
 ) {
-    if let Ok(window) = windows.get_single() {
-        update(
-            window.width() as i32,
-            window.height() as i32,
-            paths,
-            tile_size,
-            upper_left,
-        );
+    if reader.read().next().is_some() {
+        println!("SuperFoodPlugin::on_window_created");
+        update(paths, tile_size);
     }
 }
 
 fn on_window_resized(
     mut reader: EventReader<WindowResized>,
     paths: Query<&mut Path, With<SuperFood>>,
-    tile_size: ResMut<TileSize>,
-    upper_left: ResMut<UpperLeft>,
-) {
-    if let Some(resized) = reader.read().next() {
-        update(
-            resized.width as i32,
-            resized.height as i32,
-            paths,
-            tile_size,
-            upper_left,
-        );
-    }
-}
-
-fn update(
-    width: i32,
-    height: i32,
-    mut paths: Query<&mut Path, With<SuperFood>>,
     mut tile_size: ResMut<TileSize>,
     mut upper_left: ResMut<UpperLeft>,
 ) {
-    tile_size.0 = cmp::min(width / crate::ARENA_WIDTH, height / crate::ARENA_HEIGHT);
-    upper_left.x = (width - (crate::ARENA_WIDTH - 1) * tile_size.0) / 2;
-    upper_left.y = (height - (crate::ARENA_HEIGHT - 1) * tile_size.0) / 2;
+    if let Some(resized) = reader.read().next() {
+        tile_size.0 = cmp::min(
+            resized.width as i32 / crate::ARENA_WIDTH,
+            resized.height as i32 / crate::ARENA_HEIGHT,
+        );
+        upper_left.x = (resized.width as i32 - (crate::ARENA_WIDTH - 1) * tile_size.0) / 2;
+        upper_left.y = (resized.height as i32 - (crate::ARENA_HEIGHT - 1) * tile_size.0) / 2;
 
+        update(paths, tile_size);
+    }
+}
+
+fn update(mut paths: Query<&mut Path, With<SuperFood>>, tile_size: ResMut<TileSize>) {
     let mut path_builder = PathBuilder::new();
     path_builder.move_to(-tile_size.0 as f32 * Vec2::X);
     path_builder.line_to(tile_size.0 as f32 * Vec2::X);

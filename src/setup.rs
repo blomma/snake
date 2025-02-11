@@ -8,8 +8,6 @@ pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut windows: Query<&mut Window, With<PrimaryWindow>>,
-    mut tile_size: ResMut<TileSize>,
-    mut upper_left: ResMut<UpperLeft>,
 ) {
     commands.spawn(Camera2d);
 
@@ -19,13 +17,26 @@ pub fn setup(
     if let Ok(mut window) = windows.get_single_mut() {
         window.cursor_options.visible = false;
 
-        tile_size.0 = cmp::min(
+        let tile_size = cmp::min(
             window.width() as i32 / crate::ARENA_WIDTH,
             window.height() as i32 / crate::ARENA_HEIGHT,
         );
+        commands.insert_resource(TileSize(tile_size));
 
-        upper_left.x = (window.width() as i32 - (crate::ARENA_WIDTH - 1) * tile_size.0) / 2;
-        upper_left.y = (window.height() as i32 - (crate::ARENA_HEIGHT - 1) * tile_size.0) / 2;
+        let upper_left_x = (window.width() as i32 - (crate::ARENA_WIDTH - 1) * tile_size) / 2;
+        let upper_left_y = (window.height() as i32 - (crate::ARENA_HEIGHT - 1) * tile_size) / 2;
+
+        let upper_left = UpperLeft {
+            x: upper_left_x,
+            y: upper_left_y,
+        };
+
+        commands.insert_resource(upper_left);
+
+        println!(
+            "{} tile_size, {} upper_left_x, {} upper_left_y",
+            tile_size, upper_left_x, upper_left_y
+        );
     }
 }
 

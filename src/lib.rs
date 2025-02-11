@@ -30,7 +30,6 @@ pub const SPECIAL_SPAWN_INTERVAL: u32 = 16;
 
 pub const DIPLOPOD_COLOR: Color = Color::Srgba(ORANGE);
 pub const DIPLOPOD_IMMUNE_COLOR: Color = Color::WHITE;
-pub const WALL_COLOR: Color = Color::srgb(0.25, 0.25, 0.25);
 pub const FOOD_COLOR: Color = Color::srgb(0.0, 1.0, 0.0);
 pub const SUPERFOOD_COLOR: Color = Color::Srgba(BLUE);
 pub const POISON_OUTLINE_COLOR: Color = Color::Srgba(RED);
@@ -46,6 +45,7 @@ impl Plugin for GamePlugin {
         app.add_plugins((
             ShapePlugin,
             systems::highscore::HighscorePlugin,
+            systems::gameover::GameOverPlugin,
             menu::MenuPlugin,
             graphics::GraphicsPlugin,
             graphics::food::FoodPlugin,
@@ -60,16 +60,7 @@ impl Plugin for GamePlugin {
             Update,
             setup::set_default_font.run_if(resource_exists::<resources::DefaultFontHandle>),
         )
-        .add_systems(
-            OnEnter(GameState::Game),
-            (
-                control::init_diplopod,
-                control::init_wall,
-                control::init_food,
-                control::init_poison,
-            )
-                .chain(),
-        )
+        .add_systems(OnEnter(GameState::Game), (control::init_poison).chain())
         .add_systems(
             Update,
             (
@@ -89,10 +80,6 @@ impl Plugin for GamePlugin {
                 (control::limit_immunity.run_if(on_timer(Duration::from_secs(1))),)
                     .run_if(in_state(GameState::Game))
                     .run_if(not(resource_exists::<Paused>)),
-                control::game_over
-                    .after(Phase::Movement)
-                    .run_if(in_state(GameState::Game))
-                    .run_if(on_event::<GameOver>),
             ),
         )
         .add_systems(
@@ -113,8 +100,6 @@ impl Plugin for GamePlugin {
         .add_systems(OnExit(GameState::Game), despawn_screen::<OnGameScreen>)
         .init_state::<crate::GameState>()
         .insert_resource(ClearColor(Color::BLACK))
-        .insert_resource(TileSize::default())
-        .insert_resource(UpperLeft::default())
         .insert_resource(DiplopodSegments::default())
         .insert_resource(LastTailPosition::default())
         .insert_resource(LastSpecialSpawn::default())

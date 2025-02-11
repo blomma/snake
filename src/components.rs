@@ -30,9 +30,6 @@ pub struct Position {
 }
 
 #[derive(Component)]
-pub struct Wall;
-
-#[derive(Component)]
 pub struct Food;
 
 #[derive(Component)]

@@ -1,23 +1,30 @@
 use std::cmp;
 
 use bevy::{
-    app::{App, Plugin, Startup, Update},
+    app::{App, Plugin, Update},
     ecs::{
         event::EventReader,
         query::With,
         schedule::IntoSystemConfigs,
-        system::{Query, Res, ResMut},
+        system::{Commands, Query, Res, ResMut},
     },
     math::{Vec2, Vec3},
-    state::condition::in_state,
+    state::{condition::in_state, state::OnEnter},
     transform::components::Transform,
+    utils::default,
     window::{PrimaryWindow, Window, WindowResized},
 };
-use bevy_prototype_lyon::{entity::Path, path::ShapePath, shapes};
+use bevy_prototype_lyon::{
+    draw::{Fill, Stroke},
+    entity::{Path, ShapeBundle},
+    path::ShapePath,
+    prelude::GeometryBuilder,
+    shapes,
+};
 
 use crate::{
-    components::{DiplopodPosition, DiplopodSegment},
-    resources::{TileSize, UpperLeft},
+    components::{DiplopodHead, DiplopodPosition, DiplopodSegment, OnGameScreen},
+    resources::{DiplopodSegments, TileSize, UpperLeft},
     GameState, Phase,
 };
 
@@ -25,7 +32,7 @@ pub struct DiplopodSegmentsPlugin;
 
 impl Plugin for DiplopodSegmentsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, on_window_created)
+        app.add_systems(OnEnter(GameState::Game), init_diplopod)
             .add_systems(Update, on_window_resized)
             .add_systems(
                 Update,
@@ -36,59 +43,32 @@ impl Plugin for DiplopodSegmentsPlugin {
     }
 }
 
-fn on_window_created(
-    windows: Query<&Window, With<PrimaryWindow>>,
-    paths: Query<&mut Path, With<DiplopodSegment>>,
-    tile_size: ResMut<TileSize>,
-    upper_left: ResMut<UpperLeft>,
-) {
-    if let Ok(window) = windows.get_single() {
-        update(
-            window.width() as i32,
-            window.height() as i32,
-            paths,
-            tile_size,
-            upper_left,
-        );
-    }
-}
-
-fn on_window_resized(
-    mut reader: EventReader<WindowResized>,
-    paths: Query<&mut Path, With<DiplopodSegment>>,
-    tile_size: ResMut<TileSize>,
-    upper_left: ResMut<UpperLeft>,
-) {
-    if let Some(resized) = reader.read().next() {
-        update(
-            resized.width as i32,
-            resized.height as i32,
-            paths,
-            tile_size,
-            upper_left,
-        );
-    }
-}
-
-fn update(
-    width: i32,
-    height: i32,
-    mut paths: Query<&mut Path, With<DiplopodSegment>>,
-    mut tile_size: ResMut<TileSize>,
-    mut upper_left: ResMut<UpperLeft>,
-) {
-    tile_size.0 = cmp::min(width / crate::ARENA_WIDTH, height / crate::ARENA_HEIGHT);
-    upper_left.x = (width - (crate::ARENA_WIDTH - 1) * tile_size.0) / 2;
-    upper_left.y = (height - (crate::ARENA_HEIGHT - 1) * tile_size.0) / 2;
-
-    let shape = shapes::Rectangle {
+fn diplopod_shape(tile_size: &Res<TileSize>) -> shapes::Rectangle {
+    return shapes::Rectangle {
         extents: Vec2::splat(tile_size.0 as f32),
         origin: shapes::RectangleOrigin::Center,
         radii: None,
     };
+}
 
-    for mut path in paths.iter_mut() {
-        *path = ShapePath::build_as(&shape);
+fn on_window_resized(
+    mut reader: EventReader<WindowResized>,
+    mut paths: Query<&mut Path, With<DiplopodSegment>>,
+    mut tile_size: ResMut<TileSize>,
+    mut upper_left: ResMut<UpperLeft>,
+) {
+    if let Some(resized) = reader.read().next() {
+        tile_size.0 = cmp::min(
+            resized.width as i32 / crate::ARENA_WIDTH,
+            resized.height as i32 / crate::ARENA_HEIGHT,
+        );
+        upper_left.x = (resized.width as i32 - (crate::ARENA_WIDTH - 1) * tile_size.0) / 2;
+        upper_left.y = (resized.height as i32 - (crate::ARENA_HEIGHT - 1) * tile_size.0) / 2;
+
+        let shape = diplopod_shape(&tile_size.into());
+        for mut path in paths.iter_mut() {
+            *path = ShapePath::build_as(&shape);
+        }
     }
 }
 
@@ -107,4 +87,39 @@ fn diplopod_position_translation(
             )
         }
     }
+}
+
+fn init_diplopod(
+    mut commands: Commands,
+    mut segments: ResMut<DiplopodSegments>,
+    tile_size: Res<TileSize>,
+) {
+    spawn_diplopod(&mut commands, &mut segments, &tile_size);
+}
+
+fn spawn_diplopod(
+    commands: &mut Commands,
+    segments: &mut ResMut<DiplopodSegments>,
+    tile_size: &Res<TileSize>,
+) {
+    let shape = diplopod_shape(&tile_size);
+    segments.0 = vec![commands
+        .spawn((
+            ShapeBundle {
+                path: GeometryBuilder::build_as(&shape),
+                ..default()
+            },
+            Fill::color(crate::DIPLOPOD_COLOR),
+            Stroke::color(crate::DIPLOPOD_COLOR),
+        ))
+        .insert(DiplopodHead {
+            direction: Vec2::ZERO,
+        })
+        .insert(DiplopodSegment)
+        .insert(DiplopodPosition {
+            x: crate::ARENA_WIDTH / 2,
+            y: crate::ARENA_HEIGHT / 2,
+        })
+        .insert(OnGameScreen)
+        .id()];
 }

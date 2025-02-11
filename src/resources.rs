@@ -7,7 +7,7 @@ use crate::components::{DiplopodPosition, Position};
 #[derive(Default, Resource)]
 pub struct DiplopodSegments(pub Vec<Entity>);
 
-#[derive(Clone, Resource)]
+#[derive(Clone, Resource, Default)]
 pub struct FreePositions {
     pub positions: Vec<Position>,
     width: i32,
