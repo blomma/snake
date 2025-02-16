@@ -1,46 +1,21 @@
-use std::cmp;
-
 use bevy::{
-    app::{App, Plugin, Update},
-    color::Color,
-    ecs::{
-        component::Component,
-        event::EventReader,
-        query::With,
-        system::{Commands, Query, ResMut},
-        world::World,
-    },
+    ecs::{system::Commands, world::World},
     math::Vec2,
-    state::state::OnEnter,
     utils::default,
-    window::WindowResized,
 };
 use bevy_prototype_lyon::{
     draw::{Fill, Stroke},
-    entity::{Path, ShapeBundle},
-    path::ShapePath,
+    entity::ShapeBundle,
     prelude::GeometryBuilder,
     shapes::{self},
 };
 
 use crate::{
-    components::{GameState, OnGameScreen, Position},
-    resources::{FreePositions, TileSize, UpperLeft},
+    components::{OnGameScreen, Position},
+    resources::{FreePositions, TileSize},
 };
 
-#[derive(Component)]
-pub struct Wall;
-
-pub const WALL_COLOR: Color = Color::srgb(0.25, 0.25, 0.25);
-
-pub struct WallPlugin;
-
-impl Plugin for WallPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Game), init_wall)
-            .add_systems(Update, on_window_resized);
-    }
-}
+use super::{Wall, WALL_COLOR};
 
 fn wall_shape(tile_size: &TileSize) -> shapes::Rectangle {
     return shapes::Rectangle {
@@ -50,28 +25,7 @@ fn wall_shape(tile_size: &TileSize) -> shapes::Rectangle {
     };
 }
 
-fn on_window_resized(
-    mut reader: EventReader<WindowResized>,
-    mut paths: Query<&mut Path, With<Wall>>,
-    mut tile_size: ResMut<TileSize>,
-    mut upper_left: ResMut<UpperLeft>,
-) {
-    if let Some(resized) = reader.read().next() {
-        tile_size.0 = cmp::min(
-            resized.width as i32 / crate::ARENA_WIDTH,
-            resized.height as i32 / crate::ARENA_HEIGHT,
-        );
-        upper_left.x = (resized.width as i32 - (crate::ARENA_WIDTH - 1) * tile_size.0) / 2;
-        upper_left.y = (resized.height as i32 - (crate::ARENA_HEIGHT - 1) * tile_size.0) / 2;
-
-        let shape = wall_shape(&tile_size);
-        for mut path in paths.iter_mut() {
-            *path = ShapePath::build_as(&shape);
-        }
-    }
-}
-
-fn init_wall(mut commands: Commands) {
+pub fn init(mut commands: Commands) {
     commands.queue(|world: &mut World| {
         let Some(tile_size) = world.get_resource::<TileSize>() else {
             return;

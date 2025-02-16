@@ -1,6 +1,4 @@
-use bevy::prelude::*;
-use bevy::window::WindowMode;
-use bevy::winit::WinitSettings;
+use bevy::{prelude::*, window::WindowMode, winit::WinitSettings};
 use snake::GamePlugin;
 
 #[bevy_main]

@@ -2,7 +2,7 @@ use bevy::{
     app::{Plugin, Update},
     ecs::{
         entity::Entity,
-        event::EventReader,
+        event::{Event, EventReader},
         query::With,
         schedule::{common_conditions::on_event, IntoSystemConfigs},
         system::{Query, ResMut},
@@ -11,10 +11,13 @@ use bevy::{
 };
 
 use crate::{
-    components::{DiplopodSegment, GameState, Phase},
-    events::GameOver,
-    resources::{FreePositions, Highscore, ImmunityTime, LastSpecialSpawn, Lastscore},
+    components::{GameState, Phase},
+    diplopod::DiplopodSegment,
+    resources::{FreePositions, Highscore, Lastscore},
 };
+
+#[derive(Event)]
+pub struct GameOver;
 
 pub struct GameOverPlugin;
 
@@ -34,8 +37,6 @@ fn game_over(
     mut reader: EventReader<GameOver>,
     segments: Query<Entity, With<DiplopodSegment>>,
     mut free_positions: ResMut<FreePositions>,
-    mut last_special_spawn: ResMut<LastSpecialSpawn>,
-    mut immunity_time: ResMut<ImmunityTime>,
     mut game_state: ResMut<NextState<GameState>>,
     mut lastscore: ResMut<Lastscore>,
     mut highscore: ResMut<Highscore>,
@@ -51,9 +52,6 @@ fn game_over(
         }
 
         free_positions.reset();
-
-        last_special_spawn.0 = 0;
-        immunity_time.0 = 0;
 
         game_state.set(GameState::Highscore);
     }

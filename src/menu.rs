@@ -1,5 +1,4 @@
-use crate::GameState;
-use crate::TITLE;
+use crate::{GameState, TITLE};
 use bevy::{app::AppExit, color::palettes::css::ANTIQUE_WHITE, prelude::*};
 
 pub struct MenuPlugin;

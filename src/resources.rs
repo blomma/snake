@@ -1,11 +1,7 @@
 use bevy::prelude::*;
-use rand::rng;
-use rand::seq::SliceRandom;
+use rand::{rng, seq::SliceRandom};
 
-use crate::components::{DiplopodPosition, Position};
-
-#[derive(Default, Resource)]
-pub struct DiplopodSegments(pub Vec<Entity>);
+use crate::{components::Position, diplopod::DiplopodPosition};
 
 #[derive(Clone, Resource, Default)]
 pub struct FreePositions {
@@ -59,12 +55,6 @@ impl FreePositions {
 
 #[derive(Default, Resource)]
 pub struct LastTailPosition(pub Option<DiplopodPosition>);
-
-#[derive(Default, Resource)]
-pub struct LastSpecialSpawn(pub u32);
-
-#[derive(Default, Resource)]
-pub struct ImmunityTime(pub u8);
 
 #[derive(Default, Debug, Resource)]
 pub struct TileSize(pub i32);

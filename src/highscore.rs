@@ -1,16 +1,18 @@
-use crate::TITLE;
-use anyhow::anyhow;
-use anyhow::Result;
-use bevy::color::palettes::css::ANTIQUE_WHITE;
-use bevy::time::common_conditions::on_timer;
-use bevy::utils::Duration;
-use bevy::{input::keyboard::KeyboardInput, input::ButtonState, prelude::*};
+use anyhow::{anyhow, Result};
+use bevy::{
+    color::palettes::css::ANTIQUE_WHITE,
+    input::{keyboard::KeyboardInput, ButtonState},
+    prelude::*,
+    time::common_conditions::on_timer,
+    utils::Duration,
+};
 use directories::ProjectDirs;
-use std::fs::File;
-use std::io::Write;
+use std::{fs::File, io::Write};
 
-use crate::resources::{self, Highscore, Lastscore};
-use crate::GameState;
+use crate::{
+    resources::{self, Highscore, Lastscore},
+    GameState, TITLE,
+};
 
 /// Adds a screen that shows the highscore of the current session and
 /// the score of the last game.

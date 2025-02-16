@@ -1,16 +1,13 @@
 use std::cmp;
 
 use crate::resources::{DefaultFontHandle, TileSize, UpperLeft};
-use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
+use bevy::{prelude::*, window::PrimaryWindow};
 
 pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut windows: Query<&mut Window, With<PrimaryWindow>>,
 ) {
-    commands.spawn(Camera2d);
-
     let font = asset_server.load("fonts/AllertaStencil-Regular.ttf");
     commands.insert_resource(DefaultFontHandle(font));
 
@@ -32,11 +29,6 @@ pub fn setup(
         };
 
         commands.insert_resource(upper_left);
-
-        println!(
-            "{} tile_size, {} upper_left_x, {} upper_left_y",
-            tile_size, upper_left_x, upper_left_y
-        );
     }
 }
 
