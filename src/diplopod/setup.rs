@@ -15,11 +15,11 @@ use crate::{components::OnGameScreen, resources::TileSize};
 use super::{DiplopodHead, DiplopodPosition, DiplopodSegment, DiplopodSegments};
 
 fn diplopod_shape(tile_size: &Res<TileSize>) -> shapes::Rectangle {
-    return shapes::Rectangle {
+    shapes::Rectangle {
         extents: Vec2::splat(tile_size.0 as f32),
         origin: shapes::RectangleOrigin::Center,
         radii: None,
-    };
+    }
 }
 
 pub fn init(

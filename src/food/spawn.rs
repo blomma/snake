@@ -21,10 +21,11 @@ use crate::{
 
 use super::{Food, SpawnFood, FOOD_COLOR};
 
-fn food_shape(tile_size: &TileSize) -> shapes::Circle {
-    return shapes::Circle {
-        radius: tile_size.0 as f32 * crate::RADIUS_FACTOR,
-        center: Vec2::new(0., 0.),
+fn food_shape(tile_size: &TileSize) -> shapes::Rectangle {
+    return shapes::Rectangle {
+        extents: Vec2::splat(tile_size.0 as f32),
+        origin: shapes::RectangleOrigin::Center,
+        radii: None,
     };
 }
 

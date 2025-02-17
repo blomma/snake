@@ -1,5 +1,7 @@
 mod setup;
 
+use crate::ARENA_HEIGHT;
+use crate::ARENA_WIDTH;
 use bevy::{
     app::{App, Plugin, Update},
     color::Color,
@@ -28,7 +30,7 @@ use crate::{
     components::{OnGameScreen, Position},
     food::{Food, SpawnFood},
     gameover::GameOver,
-    resources::{FreePositions, LastTailPosition, TileSize, UpperLeft},
+    resources::{FreePositions, LastTailPosition, TileSize},
     wall::Wall,
     GameState, Phase,
 };
@@ -56,8 +58,8 @@ pub struct DiplopodPosition {
 impl DiplopodPosition {
     pub fn to_position(self) -> Position {
         Position {
-            x: self.x / crate::CONSUMABLE_SCALE_FACTOR,
-            y: self.y / crate::CONSUMABLE_SCALE_FACTOR,
+            x: self.x,
+            y: self.y,
         }
     }
 }
@@ -69,27 +71,43 @@ impl Plugin for DiplopodPlugin {
         app.add_systems(OnEnter(GameState::Game), setup::init)
             .add_systems(
                 Update,
-                (diplopod_position_translation,)
+                (position_translation,)
                     .after(Phase::Movement)
                     .run_if(in_state(GameState::Game)),
             );
     }
 }
+// segments: Query<Entity, With<DiplopodSegment>>,
 
-fn diplopod_position_translation(
+fn position_translation(
     windows: Query<&Window, With<PrimaryWindow>>,
-    mut q: Query<(&DiplopodPosition, &mut Transform)>,
+    mut q: Query<(&DiplopodPosition, &mut Transform), With<DiplopodSegment>>,
     tile_size: Res<TileSize>,
-    upper_left: Res<UpperLeft>,
 ) {
-    if let Ok(window) = windows.get_single() {
-        for (pos, mut transform) in q.iter_mut() {
-            transform.translation = Vec3::new(
-                (pos.x * tile_size.0 + upper_left.x - window.width() as i32 / 2) as f32,
-                (pos.y * tile_size.0 + upper_left.y - window.height() as i32 / 2) as f32,
-                0.0,
-            )
-        }
+    fn convert(pos: f32, bound_window: f32, bound_game: f32, tile_size: f32) -> f32 {
+        pos / bound_game * bound_window - (bound_window / 2.) + (tile_size / 2.)
+    }
+
+    let Ok(window) = windows.get_single() else {
+        return;
+    };
+
+    for (pos, mut transform) in q.iter_mut() {
+        transform.translation = Vec3::new(
+            convert(
+                pos.x as f32,
+                window.width(),
+                ARENA_WIDTH as f32,
+                tile_size.0 as f32,
+            ),
+            convert(
+                pos.y as f32,
+                window.height(),
+                ARENA_HEIGHT as f32,
+                tile_size.0 as f32,
+            ),
+            1.0,
+        );
     }
 }
 
@@ -130,21 +148,23 @@ pub fn growth(
     mut growth_reader: EventReader<Growth>,
     tile_size: Res<TileSize>,
 ) {
-    if let Some(growth) = growth_reader.read().next() {
-        let shape = shapes::Rectangle {
-            extents: Vec2::splat(tile_size.0 as f32),
-            origin: shapes::RectangleOrigin::Center,
-            radii: None,
-        };
+    let Some(growth) = growth_reader.read().next() else {
+        return;
+    };
 
-        for _ in 0..growth.0 {
-            segments.0.push(spawn_segment(
-                &mut commands,
-                crate::DIPLOPOD_COLOR,
-                last_tail_position.0.unwrap(),
-                &shape,
-            ));
-        }
+    let shape = shapes::Rectangle {
+        extents: Vec2::splat(tile_size.0 as f32),
+        origin: shapes::RectangleOrigin::Center,
+        radii: None,
+    };
+
+    for _ in 0..growth.0 {
+        segments.0.push(spawn_segment(
+            &mut commands,
+            crate::DIPLOPOD_COLOR,
+            last_tail_position.0.unwrap(),
+            &shape,
+        ));
     }
 }
 

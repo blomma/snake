@@ -18,11 +18,11 @@ use crate::{
 use super::{Wall, WALL_COLOR};
 
 fn wall_shape(tile_size: &TileSize) -> shapes::Rectangle {
-    return shapes::Rectangle {
-        extents: Vec2::splat(tile_size.0 as f32 * 2.0),
+    shapes::Rectangle {
+        extents: Vec2::splat(tile_size.0 as f32),
         origin: shapes::RectangleOrigin::Center,
         radii: None,
-    };
+    }
 }
 
 pub fn init(mut commands: Commands) {
@@ -34,7 +34,7 @@ pub fn init(mut commands: Commands) {
         let shape = wall_shape(tile_size);
         let mut positions: Vec<Position> = Vec::new();
 
-        for x in 0..crate::CONSUMABLE_WIDTH + 1 {
+        for x in 0..crate::ARENA_WIDTH {
             let pos = Position { x, y: 0 };
             world.spawn((
                 Wall,
@@ -67,7 +67,7 @@ pub fn init(mut commands: Commands) {
             positions.push(pos);
         }
 
-        for y in 1..crate::CONSUMABLE_HEIGHT {
+        for y in 1..crate::ARENA_HEIGHT - 1 {
             let pos = Position { x: 0, y };
             world.spawn((
                 Wall,

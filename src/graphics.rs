@@ -4,7 +4,7 @@ use bevy::{prelude::*, time::common_conditions::on_timer, window::PrimaryWindow}
 
 use crate::{
     components::*, events::ShowMessage, resources::Paused, GameState, OnGameScreen, Phase,
-    TileSize, UpperLeft,
+    TileSize, ARENA_HEIGHT, ARENA_WIDTH,
 };
 
 pub struct GraphicsPlugin;
@@ -30,20 +30,31 @@ fn position_translation(
     windows: Query<&Window, With<PrimaryWindow>>,
     mut q: Query<(&Position, &mut Transform)>,
     tile_size: Res<TileSize>,
-    upper_left: Res<UpperLeft>,
 ) {
-    if let Ok(window) = windows.get_single() {
-        for (pos, mut transform) in q.iter_mut() {
-            transform.translation = Vec3::new(
-                (pos.x * tile_size.0 * crate::CONSUMABLE_SCALE_FACTOR + upper_left.x
-                    - window.width() as i32 / 2
-                    + tile_size.0 / 2) as f32,
-                (pos.y * tile_size.0 * crate::CONSUMABLE_SCALE_FACTOR + upper_left.y
-                    - window.height() as i32 / 2
-                    + tile_size.0 / 2) as f32,
-                1.0,
-            )
-        }
+    fn convert(pos: f32, bound_window: f32, bound_game: f32, tile_size: f32) -> f32 {
+        pos / bound_game * bound_window - (bound_window / 2.) + (tile_size / 2.)
+    }
+
+    let Ok(window) = windows.get_single() else {
+        return;
+    };
+
+    for (pos, mut transform) in q.iter_mut() {
+        transform.translation = Vec3::new(
+            convert(
+                pos.x as f32,
+                window.width(),
+                ARENA_WIDTH as f32,
+                tile_size.0 as f32,
+            ),
+            convert(
+                pos.y as f32,
+                window.height(),
+                ARENA_HEIGHT as f32,
+                tile_size.0 as f32,
+            ),
+            0.0,
+        );
     }
 }
 

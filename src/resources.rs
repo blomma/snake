@@ -59,12 +59,6 @@ pub struct LastTailPosition(pub Option<DiplopodPosition>);
 #[derive(Default, Debug, Resource)]
 pub struct TileSize(pub i32);
 
-#[derive(Default, Debug, Resource)]
-pub struct UpperLeft {
-    pub x: i32,
-    pub y: i32,
-}
-
 #[derive(Resource)]
 pub struct DefaultFontHandle(pub Handle<Font>);
 

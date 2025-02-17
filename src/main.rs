@@ -6,7 +6,7 @@ fn main() {
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
                     title: snake::TITLE.into(),
-                    resolution: (1149., 645.).into(),
+                    resolution: (645., 645.).into(),
                     ..default()
                 }),
                 ..default()

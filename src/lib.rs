@@ -23,15 +23,12 @@ use resources::*;
 
 pub const TITLE: &str = "diplopod";
 
-pub const CONSUMABLE_WIDTH: i32 = 39 + 1;
-pub const CONSUMABLE_HEIGHT: i32 = 21 + 1;
-pub const CONSUMABLE_SCALE_FACTOR: i32 = 2;
-pub const ARENA_WIDTH: i32 = (CONSUMABLE_WIDTH + 1) * CONSUMABLE_SCALE_FACTOR;
-pub const ARENA_HEIGHT: i32 = (CONSUMABLE_HEIGHT + 1) * CONSUMABLE_SCALE_FACTOR;
+pub const CONSUMABLE_WIDTH: i32 = 22;
+pub const CONSUMABLE_HEIGHT: i32 = 22;
+pub const ARENA_WIDTH: i32 = CONSUMABLE_WIDTH + 1;
+pub const ARENA_HEIGHT: i32 = CONSUMABLE_HEIGHT + 1;
 
 pub const DIPLOPOD_COLOR: Color = Color::Srgba(ORANGE);
-
-pub const RADIUS_FACTOR: f32 = 0.9;
 
 pub struct GamePlugin;
 

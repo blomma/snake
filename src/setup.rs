@@ -1,6 +1,6 @@
 use std::cmp;
 
-use crate::resources::{DefaultFontHandle, TileSize, UpperLeft};
+use crate::resources::{DefaultFontHandle, TileSize};
 use bevy::{prelude::*, window::PrimaryWindow};
 
 pub fn setup(
@@ -11,25 +11,23 @@ pub fn setup(
     let font = asset_server.load("fonts/AllertaStencil-Regular.ttf");
     commands.insert_resource(DefaultFontHandle(font));
 
-    if let Ok(mut window) = windows.get_single_mut() {
-        window.cursor_options.visible = false;
+    let Ok(mut window) = windows.get_single_mut() else {
+        return;
+    };
 
-        let tile_size = cmp::min(
-            window.width() as i32 / crate::ARENA_WIDTH,
-            window.height() as i32 / crate::ARENA_HEIGHT,
-        );
-        commands.insert_resource(TileSize(tile_size));
+    window.cursor_options.visible = false;
 
-        let upper_left_x = (window.width() as i32 - (crate::ARENA_WIDTH - 1) * tile_size) / 2;
-        let upper_left_y = (window.height() as i32 - (crate::ARENA_HEIGHT - 1) * tile_size) / 2;
+    let window_width = window.width() as i32;
+    let window_height = window.height() as i32;
+    info!(window_width);
+    info!(window_height);
 
-        let upper_left = UpperLeft {
-            x: upper_left_x,
-            y: upper_left_y,
-        };
-
-        commands.insert_resource(upper_left);
-    }
+    let tile_size = cmp::min(
+        window_width / crate::ARENA_WIDTH,
+        window_height / crate::ARENA_HEIGHT,
+    );
+    info!(tile_size);
+    commands.insert_resource(TileSize(tile_size));
 }
 
 pub fn set_default_font(
