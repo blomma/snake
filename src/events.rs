@@ -1,9 +1,9 @@
 use bevy::ecs::event::Event;
 
-use crate::diplopod::DiplopodPosition;
+use crate::components::Position;
 
 #[derive(Event)]
 pub struct ShowMessage {
     pub text: String,
-    pub position: DiplopodPosition,
+    pub position: Position,
 }

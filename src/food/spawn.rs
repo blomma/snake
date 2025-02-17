@@ -1,6 +1,7 @@
 use bevy::{
     ecs::{
         event::EventReader,
+        query::With,
         system::{Commands, Query, Res, ResMut},
     },
     math::Vec2,
@@ -15,29 +16,29 @@ use bevy_prototype_lyon::{
 
 use crate::{
     components::{OnGameScreen, Position},
-    diplopod::{DiplopodPosition, DiplopodSegments},
+    diplopod::{DiplopodSegment, DiplopodSegments},
     resources::{FreePositions, TileSize},
 };
 
 use super::{Food, SpawnFood, FOOD_COLOR};
 
 fn food_shape(tile_size: &TileSize) -> shapes::Rectangle {
-    return shapes::Rectangle {
+    shapes::Rectangle {
         extents: Vec2::splat(tile_size.0 as f32),
         origin: shapes::RectangleOrigin::Center,
         radii: None,
-    };
+    }
 }
 
 pub fn spawn_food(
     mut commands: Commands,
     segments: ResMut<DiplopodSegments>,
     mut spawn_food_reader: EventReader<SpawnFood>,
-    mut diplopod_positions: Query<&mut DiplopodPosition>,
+    mut diplopod_positions: Query<&mut Position, With<DiplopodSegment>>,
     mut free_positions: ResMut<FreePositions>,
     tile_size: Res<TileSize>,
 ) {
-    if !spawn_food_reader.read().next().is_some() {
+    if spawn_food_reader.read().next().is_none() {
         return;
     }
 
@@ -46,7 +47,6 @@ pub fn spawn_food(
         .0
         .iter()
         .map(|e| *diplopod_positions.get_mut(*e).unwrap())
-        .map(|p| p.to_position())
         .collect::<Vec<Position>>();
 
     let mut position_candidates = free_positions.clone();

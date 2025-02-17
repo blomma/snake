@@ -10,9 +10,12 @@ use bevy_prototype_lyon::{
     shapes::{self},
 };
 
-use crate::{components::OnGameScreen, resources::TileSize};
+use crate::{
+    components::{OnGameScreen, Position},
+    resources::TileSize,
+};
 
-use super::{DiplopodHead, DiplopodPosition, DiplopodSegment, DiplopodSegments};
+use super::{DiplopodHead, DiplopodSegment, DiplopodSegments};
 
 fn diplopod_shape(tile_size: &Res<TileSize>) -> shapes::Rectangle {
     shapes::Rectangle {
@@ -41,7 +44,7 @@ pub fn init(
             direction: Vec2::ZERO,
         })
         .insert(DiplopodSegment)
-        .insert(DiplopodPosition {
+        .insert(Position {
             x: crate::ARENA_WIDTH / 2,
             y: crate::ARENA_HEIGHT / 2,
         })

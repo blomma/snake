@@ -41,18 +41,20 @@ fn game_over(
     mut lastscore: ResMut<Lastscore>,
     mut highscore: ResMut<Highscore>,
 ) {
-    if reader.read().next().is_some() {
-        lastscore.0 = 0;
-        for _ in segments.iter() {
-            lastscore.0 += 1;
-        }
+    if reader.read().next().is_none() {
+        return;
+    };
 
-        if lastscore.0 > highscore.0 {
-            highscore.0 = lastscore.0;
-        }
-
-        free_positions.reset();
-
-        game_state.set(GameState::Highscore);
+    lastscore.0 = 0;
+    for _ in segments.iter() {
+        lastscore.0 += 1;
     }
+
+    if lastscore.0 > highscore.0 {
+        highscore.0 = lastscore.0;
+    }
+
+    free_positions.reset();
+
+    game_state.set(GameState::Highscore);
 }

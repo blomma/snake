@@ -1,11 +1,8 @@
 use std::time::Duration;
 
-use bevy::{prelude::*, time::common_conditions::on_timer, window::PrimaryWindow};
+use bevy::{prelude::*, time::common_conditions::on_timer};
 
-use crate::{
-    components::*, events::ShowMessage, resources::Paused, GameState, OnGameScreen, Phase,
-    TileSize, ARENA_HEIGHT, ARENA_WIDTH,
-};
+use crate::{components::*, events::ShowMessage, resources::Paused, GameState, OnGameScreen};
 
 pub struct GraphicsPlugin;
 
@@ -13,47 +10,9 @@ impl Plugin for GraphicsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (position_translation,)
-                .after(Phase::Movement)
-                .run_if(in_state(GameState::Game)),
-        )
-        .add_systems(
-            Update,
             (fade_text.run_if(on_timer(Duration::from_millis(200))),)
                 .run_if(in_state(GameState::Game))
                 .run_if(not(resource_exists::<Paused>)),
-        );
-    }
-}
-
-fn position_translation(
-    windows: Query<&Window, With<PrimaryWindow>>,
-    mut q: Query<(&Position, &mut Transform)>,
-    tile_size: Res<TileSize>,
-) {
-    fn convert(pos: f32, bound_window: f32, bound_game: f32, tile_size: f32) -> f32 {
-        pos / bound_game * bound_window - (bound_window / 2.) + (tile_size / 2.)
-    }
-
-    let Ok(window) = windows.get_single() else {
-        return;
-    };
-
-    for (pos, mut transform) in q.iter_mut() {
-        transform.translation = Vec3::new(
-            convert(
-                pos.x as f32,
-                window.width(),
-                ARENA_WIDTH as f32,
-                tile_size.0 as f32,
-            ),
-            convert(
-                pos.y as f32,
-                window.height(),
-                ARENA_HEIGHT as f32,
-                tile_size.0 as f32,
-            ),
-            0.0,
         );
     }
 }

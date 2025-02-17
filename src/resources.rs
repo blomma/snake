@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use rand::{rng, seq::SliceRandom};
 
-use crate::{components::Position, diplopod::DiplopodPosition};
+use crate::components::Position;
 
 #[derive(Clone, Resource, Default)]
 pub struct FreePositions {
@@ -54,7 +54,7 @@ impl FreePositions {
 }
 
 #[derive(Default, Resource)]
-pub struct LastTailPosition(pub Option<DiplopodPosition>);
+pub struct LastTailPosition(pub Option<Position>);
 
 #[derive(Default, Debug, Resource)]
 pub struct TileSize(pub i32);

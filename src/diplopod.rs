@@ -49,21 +49,6 @@ pub struct DiplopodHead {
 #[derive(Component)]
 pub struct DiplopodSegment;
 
-#[derive(Component, Default, Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct DiplopodPosition {
-    pub x: i32,
-    pub y: i32,
-}
-
-impl DiplopodPosition {
-    pub fn to_position(self) -> Position {
-        Position {
-            x: self.x,
-            y: self.y,
-        }
-    }
-}
-
 pub struct DiplopodPlugin;
 
 impl Plugin for DiplopodPlugin {
@@ -77,11 +62,10 @@ impl Plugin for DiplopodPlugin {
             );
     }
 }
-// segments: Query<Entity, With<DiplopodSegment>>,
 
 fn position_translation(
     windows: Query<&Window, With<PrimaryWindow>>,
-    mut q: Query<(&DiplopodPosition, &mut Transform), With<DiplopodSegment>>,
+    mut q: Query<(&Position, &mut Transform), With<DiplopodSegment>>,
     tile_size: Res<TileSize>,
 ) {
     fn convert(pos: f32, bound_window: f32, bound_game: f32, tile_size: f32) -> f32 {
@@ -117,13 +101,13 @@ pub fn eat(
     mut spawn_food_writer: EventWriter<SpawnFood>,
     mut game_over_writer: EventWriter<GameOver>,
     food_positions: Query<(Entity, &Position), With<Food>>,
-    head_positions: Query<&DiplopodPosition, With<DiplopodHead>>,
+    head_positions: Query<&Position, With<DiplopodHead>>,
     wall_positions: Query<(Entity, &Position), With<Wall>>,
     mut free_positions: ResMut<FreePositions>,
 ) {
     for head_pos in head_positions.iter() {
         for (ent, food_pos) in food_positions.iter() {
-            if *food_pos == head_pos.to_position() {
+            if food_pos == head_pos {
                 commands.entity(ent).despawn();
                 free_positions.positions.push(*food_pos);
                 free_positions.shuffle();
@@ -134,7 +118,7 @@ pub fn eat(
         }
 
         for (_ent, wall_pos) in wall_positions.iter() {
-            if *wall_pos == head_pos.to_position() {
+            if wall_pos == head_pos {
                 game_over_writer.send(GameOver);
             }
         }
@@ -170,43 +154,44 @@ pub fn growth(
 
 pub fn movement(
     mut heads: Query<(Entity, &DiplopodHead)>,
-    mut positions: Query<&mut DiplopodPosition>,
+    mut positions: Query<&mut Position, With<DiplopodSegment>>,
     segments: ResMut<DiplopodSegments>,
     mut last_tail_position: ResMut<LastTailPosition>,
     mut game_over_writer: EventWriter<GameOver>,
 ) {
-    if let Some((head_entity, head)) = heads.iter_mut().next() {
-        let segment_positions = segments
-            .0
-            .iter()
-            .map(|e| *positions.get_mut(*e).unwrap())
-            .collect::<Vec<DiplopodPosition>>();
+    let Some((head_entity, head)) = heads.iter_mut().next() else {
+        return;
+    };
 
-        let mut head_pos = positions.get_mut(head_entity).unwrap();
-        head_pos.x += head.direction.x as i32;
-        head_pos.y += head.direction.y as i32;
+    let segment_positions = segments
+        .0
+        .iter()
+        .map(|e| *positions.get_mut(*e).unwrap())
+        .collect::<Vec<Position>>();
 
-        if segment_positions.contains(&head_pos)
-            && (head.direction.x != 0.0 || head.direction.y != 0.0)
-        {
-            game_over_writer.send(GameOver);
-        }
+    let mut head_pos = positions.get_mut(head_entity).unwrap();
+    head_pos.x += head.direction.x as i32;
+    head_pos.y += head.direction.y as i32;
 
-        segment_positions
-            .iter()
-            .zip(segments.0.iter().skip(1))
-            .for_each(|(pos, segment)| {
-                *positions.get_mut(*segment).unwrap() = *pos;
-            });
-
-        last_tail_position.0 = Some(*segment_positions.last().unwrap());
+    if segment_positions.contains(&head_pos) && (head.direction.x != 0.0 || head.direction.y != 0.0)
+    {
+        game_over_writer.send(GameOver);
     }
+
+    segment_positions
+        .iter()
+        .zip(segments.0.iter().skip(1))
+        .for_each(|(pos, segment)| {
+            *positions.get_mut(*segment).unwrap() = *pos;
+        });
+
+    last_tail_position.0 = Some(*segment_positions.last().unwrap());
 }
 
 fn spawn_segment(
     commands: &mut Commands,
     color: Color,
-    position: DiplopodPosition,
+    position: Position,
     shape: &Rectangle,
 ) -> Entity {
     commands

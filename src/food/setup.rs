@@ -12,18 +12,17 @@ use bevy_prototype_lyon::{
 
 use crate::{
     components::{OnGameScreen, Position},
-    diplopod::DiplopodPosition,
     resources::{FreePositions, TileSize},
 };
 
 use super::{Food, AMOUNT_OF_FOOD, FOOD_COLOR};
 
 fn food_shape(tile_size: &TileSize) -> shapes::Rectangle {
-    return shapes::Rectangle {
+    shapes::Rectangle {
         extents: Vec2::splat(tile_size.0 as f32),
         origin: shapes::RectangleOrigin::Center,
         radii: None,
-    };
+    }
 }
 
 pub fn init(mut commands: Commands) {
@@ -32,11 +31,10 @@ pub fn init(mut commands: Commands) {
             return;
         };
 
-        let segment_positions = vec![DiplopodPosition {
+        let segment_positions = vec![Position {
             x: crate::ARENA_WIDTH / 2,
             y: crate::ARENA_HEIGHT / 2,
-        }
-        .to_position()];
+        }];
 
         let mut position_candidates = free_positions.clone();
         position_candidates.remove_all(&segment_positions);
