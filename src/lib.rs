@@ -12,7 +12,7 @@ mod resources;
 mod setup;
 mod wall;
 
-use bevy::{color::palettes::css::*, prelude::*};
+use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use components::{GameState, OnGameScreen, Phase};
 use diplopod::{eat, growth, movement, DiplopodSegments, Growth};
@@ -23,12 +23,10 @@ use resources::*;
 
 pub const TITLE: &str = "diplopod";
 
-pub const CONSUMABLE_WIDTH: i32 = 22;
-pub const CONSUMABLE_HEIGHT: i32 = 22;
+pub const CONSUMABLE_WIDTH: i32 = 47;
+pub const CONSUMABLE_HEIGHT: i32 = 26;
 pub const ARENA_WIDTH: i32 = CONSUMABLE_WIDTH + 1;
 pub const ARENA_HEIGHT: i32 = CONSUMABLE_HEIGHT + 1;
-
-pub const DIPLOPOD_COLOR: Color = Color::Srgba(ORANGE);
 
 pub struct GamePlugin;
 

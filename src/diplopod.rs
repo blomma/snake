@@ -1,10 +1,8 @@
 mod setup;
 
-use crate::ARENA_HEIGHT;
-use crate::ARENA_WIDTH;
 use bevy::{
     app::{App, Plugin, Update},
-    color::Color,
+    color::{palettes::css::ORANGE, Color},
     ecs::{
         component::Component,
         entity::Entity,
@@ -23,7 +21,7 @@ use bevy_prototype_lyon::{
     draw::{Fill, Stroke},
     entity::ShapeBundle,
     prelude::GeometryBuilder,
-    shapes::{self, Rectangle},
+    shapes::{self},
 };
 
 use crate::{
@@ -32,8 +30,10 @@ use crate::{
     gameover::GameOver,
     resources::{FreePositions, LastTailPosition, TileSize},
     wall::Wall,
-    GameState, Phase,
+    GameState, Phase, ARENA_HEIGHT, ARENA_WIDTH,
 };
+
+pub const DIPLOPOD_COLOR: Color = Color::Srgba(ORANGE);
 
 #[derive(Event)]
 pub struct Growth(pub u8);
@@ -137,18 +137,27 @@ pub fn growth(
     };
 
     let shape = shapes::Rectangle {
-        extents: Vec2::splat(tile_size.0 as f32),
+        extents: Vec2::splat((tile_size.0 as f32) - 4.0),
         origin: shapes::RectangleOrigin::Center,
         radii: None,
     };
 
     for _ in 0..growth.0 {
-        segments.0.push(spawn_segment(
-            &mut commands,
-            crate::DIPLOPOD_COLOR,
-            last_tail_position.0.unwrap(),
-            &shape,
-        ));
+        segments.0.push(
+            commands
+                .spawn((
+                    ShapeBundle {
+                        path: GeometryBuilder::build_as(&shape),
+                        ..default()
+                    },
+                    Fill::color(DIPLOPOD_COLOR),
+                    Stroke::color(DIPLOPOD_COLOR),
+                ))
+                .insert(DiplopodSegment)
+                .insert(last_tail_position.0.unwrap())
+                .insert(OnGameScreen)
+                .id(),
+        );
     }
 }
 
@@ -186,25 +195,4 @@ pub fn movement(
         });
 
     last_tail_position.0 = Some(*segment_positions.last().unwrap());
-}
-
-fn spawn_segment(
-    commands: &mut Commands,
-    color: Color,
-    position: Position,
-    shape: &Rectangle,
-) -> Entity {
-    commands
-        .spawn((
-            ShapeBundle {
-                path: GeometryBuilder::build_as(shape),
-                ..default()
-            },
-            Fill::color(color),
-            Stroke::color(color),
-        ))
-        .insert(DiplopodSegment)
-        .insert(position)
-        .insert(OnGameScreen)
-        .id()
 }

@@ -15,7 +15,7 @@ use crate::{
     resources::TileSize,
 };
 
-use super::{DiplopodHead, DiplopodSegment, DiplopodSegments};
+use super::{DiplopodHead, DiplopodSegment, DiplopodSegments, DIPLOPOD_COLOR};
 
 fn diplopod_shape(tile_size: &Res<TileSize>) -> shapes::Rectangle {
     shapes::Rectangle {
@@ -37,8 +37,8 @@ pub fn init(
                 path: GeometryBuilder::build_as(&shape),
                 ..default()
             },
-            Fill::color(crate::DIPLOPOD_COLOR),
-            Stroke::color(crate::DIPLOPOD_COLOR),
+            Fill::color(DIPLOPOD_COLOR),
+            Stroke::color(DIPLOPOD_COLOR),
         ))
         .insert(DiplopodHead {
             direction: Vec2::ZERO,

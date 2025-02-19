@@ -67,7 +67,7 @@ fn position_translation(
                 ARENA_HEIGHT as f32,
                 tile_size.0 as f32,
             ),
-            1.0,
+            2.0,
         );
     }
 }
