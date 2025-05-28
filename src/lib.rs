@@ -13,11 +13,10 @@ mod setup;
 mod wall;
 
 use bevy::prelude::*;
-use bevy_prototype_lyon::prelude::*;
 use components::{GameState, OnGameScreen, Phase};
-use diplopod::{eat, growth, movement, DiplopodSegments, Growth};
+use diplopod::{DiplopodSegments, Growth, eat, growth, movement};
 use events::*;
-use food::{spawn::spawn_food, SpawnFood};
+use food::{SpawnFood, spawn::spawn_food};
 use gameover::GameOver;
 use resources::*;
 
@@ -33,7 +32,6 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
-            ShapePlugin,
             highscore::HighscorePlugin,
             gameover::GameOverPlugin,
             menu::MenuPlugin,
@@ -95,6 +93,6 @@ impl Plugin for GamePlugin {
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
 pub fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
     for entity in &to_despawn {
-        commands.entity(entity).despawn_recursive();
+        commands.entity(entity).despawn();
     }
 }

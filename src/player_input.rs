@@ -2,28 +2,34 @@ use crate::{diplopod::DiplopodHead, resources::Paused};
 use bevy::prelude::*;
 
 pub fn keyboard(keyboard_input: Res<ButtonInput<KeyCode>>, mut heads: Query<&mut DiplopodHead>) {
-    if let Some(mut head) = heads.iter_mut().next() {
-        let mut direction = Vec2::ZERO;
+    let Some(mut head) = heads.iter_mut().next() else {
+        return;
+    };
 
-        if keyboard_input.any_pressed([KeyCode::ArrowLeft, KeyCode::KeyA, KeyCode::KeyH]) {
-            direction = Vec2::new(-1.0, 0.0);
-        }
+    let mut direction = Vec2::ZERO;
 
-        if keyboard_input.any_pressed([KeyCode::ArrowRight, KeyCode::KeyD, KeyCode::KeyL]) {
-            direction = Vec2::new(1.0, 0.0);
-        }
+    if keyboard_input.any_pressed([KeyCode::ArrowLeft, KeyCode::KeyA, KeyCode::KeyH]) {
+        direction = Vec2::new(-1.0, 0.0);
+        info!("LEFT");
+    }
 
-        if keyboard_input.any_pressed([KeyCode::ArrowUp, KeyCode::KeyW, KeyCode::KeyK]) {
-            direction = Vec2::new(direction.x, 1.0);
-        }
+    if keyboard_input.any_pressed([KeyCode::ArrowRight, KeyCode::KeyD, KeyCode::KeyL]) {
+        direction = Vec2::new(1.0, 0.0);
+        info!("RIGHT");
+    }
 
-        if keyboard_input.any_pressed([KeyCode::ArrowDown, KeyCode::KeyS, KeyCode::KeyJ]) {
-            direction = Vec2::new(direction.x, -1.0);
-        }
+    if keyboard_input.any_pressed([KeyCode::ArrowUp, KeyCode::KeyW, KeyCode::KeyK]) {
+        direction = Vec2::new(direction.x, 1.0);
+        info!("UP");
+    }
 
-        if direction != Vec2::ZERO {
-            head.direction = direction;
-        }
+    if keyboard_input.any_pressed([KeyCode::ArrowDown, KeyCode::KeyS, KeyCode::KeyJ]) {
+        direction = Vec2::new(direction.x, -1.0);
+        info!("DOWN");
+    }
+
+    if direction != Vec2::ZERO {
+        head.direction = direction;
     }
 }
 

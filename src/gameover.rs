@@ -4,7 +4,7 @@ use bevy::{
         entity::Entity,
         event::{Event, EventReader},
         query::With,
-        schedule::{common_conditions::on_event, IntoSystemConfigs},
+        schedule::{IntoScheduleConfigs, common_conditions::on_event},
         system::{Query, ResMut},
     },
     state::{condition::in_state, state::NextState},

@@ -1,17 +1,17 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use bevy::{
     color::palettes::css::ANTIQUE_WHITE,
-    input::{keyboard::KeyboardInput, ButtonState},
+    input::{ButtonState, keyboard::KeyboardInput},
     prelude::*,
     time::common_conditions::on_timer,
-    utils::Duration,
 };
 use directories::ProjectDirs;
+use std::time::Duration;
 use std::{fs::File, io::Write};
 
 use crate::{
-    resources::{self, Highscore, Lastscore},
     GameState, TITLE,
+    resources::{self, Highscore, Lastscore},
 };
 
 /// Adds a screen that shows the highscore of the current session and

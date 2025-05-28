@@ -1,37 +1,14 @@
 mod setup;
 
-use bevy::{
-    app::{App, Plugin, Update},
-    color::{palettes::css::ORANGE, Color},
-    ecs::{
-        component::Component,
-        entity::Entity,
-        event::{Event, EventReader, EventWriter},
-        query::With,
-        schedule::IntoSystemConfigs,
-        system::{Commands, Query, Res, ResMut, Resource},
-    },
-    math::{Vec2, Vec3},
-    state::{condition::in_state, state::OnEnter},
-    transform::components::Transform,
-    utils::default,
-    window::{PrimaryWindow, Window},
-};
-use bevy_prototype_lyon::{
-    draw::{Fill, Stroke},
-    entity::ShapeBundle,
-    prelude::GeometryBuilder,
-    shapes::{self},
-};
-
 use crate::{
+    ARENA_HEIGHT, ARENA_WIDTH, GameState, Phase,
     components::{OnGameScreen, Position},
     food::{Food, SpawnFood},
     gameover::GameOver,
     resources::{FreePositions, LastTailPosition, TileSize},
     wall::Wall,
-    GameState, Phase, ARENA_HEIGHT, ARENA_WIDTH,
 };
+use bevy::{color::palettes::css::ORANGE, prelude::*, window::PrimaryWindow};
 
 pub const DIPLOPOD_COLOR: Color = Color::Srgba(ORANGE);
 
@@ -72,7 +49,7 @@ fn position_translation(
         pos / bound_game * bound_window - (bound_window / 2.) + (tile_size / 2.)
     }
 
-    let Ok(window) = windows.get_single() else {
+    let Ok(window) = windows.single() else {
         return;
     };
 
@@ -112,14 +89,14 @@ pub fn eat(
                 free_positions.positions.push(*food_pos);
                 free_positions.shuffle();
 
-                growth_writer.send(Growth(1));
-                spawn_food_writer.send(SpawnFood);
+                growth_writer.write(Growth(1));
+                spawn_food_writer.write(SpawnFood);
             }
         }
 
         for (_ent, wall_pos) in wall_positions.iter() {
             if wall_pos == head_pos {
-                game_over_writer.send(GameOver);
+                game_over_writer.write(GameOver);
             }
         }
     }
@@ -131,27 +108,20 @@ pub fn growth(
     mut segments: ResMut<DiplopodSegments>,
     mut growth_reader: EventReader<Growth>,
     tile_size: Res<TileSize>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let Some(growth) = growth_reader.read().next() else {
         return;
     };
 
-    let shape = shapes::Rectangle {
-        extents: Vec2::splat((tile_size.0 as f32) - 4.0),
-        origin: shapes::RectangleOrigin::Center,
-        radii: None,
-    };
-
+    let size = (tile_size.0 - 4) as f32;
     for _ in 0..growth.0 {
         segments.0.push(
             commands
                 .spawn((
-                    ShapeBundle {
-                        path: GeometryBuilder::build_as(&shape),
-                        ..default()
-                    },
-                    Fill::color(DIPLOPOD_COLOR),
-                    Stroke::color(DIPLOPOD_COLOR),
+                    Mesh2d(meshes.add(Rectangle::new(size, size))),
+                    MeshMaterial2d(materials.add(DIPLOPOD_COLOR)),
                 ))
                 .insert(DiplopodSegment)
                 .insert(last_tail_position.0.unwrap())
@@ -162,6 +132,7 @@ pub fn growth(
 }
 
 pub fn movement(
+    fixed_time: Res<Time>,
     mut heads: Query<(Entity, &DiplopodHead)>,
     mut positions: Query<&mut Position, With<DiplopodSegment>>,
     segments: ResMut<DiplopodSegments>,
@@ -179,12 +150,12 @@ pub fn movement(
         .collect::<Vec<Position>>();
 
     let mut head_pos = positions.get_mut(head_entity).unwrap();
-    head_pos.x += head.direction.x as i32;
-    head_pos.y += head.direction.y as i32;
+    head_pos.x += (head.direction.x * fixed_time.delta_secs()) as i32;
+    head_pos.y += (head.direction.y * fixed_time.delta_secs()) as i32;
 
     if segment_positions.contains(&head_pos) && (head.direction.x != 0.0 || head.direction.y != 0.0)
     {
-        game_over_writer.send(GameOver);
+        game_over_writer.write(GameOver);
     }
 
     segment_positions

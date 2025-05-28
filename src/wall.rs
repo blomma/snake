@@ -4,7 +4,7 @@ use bevy::{
     ecs::{
         component::Component,
         query::With,
-        schedule::IntoSystemConfigs,
+        schedule::IntoScheduleConfigs,
         system::{Query, Res},
     },
     math::Vec3,
@@ -14,9 +14,9 @@ use bevy::{
 };
 
 use crate::{
+    ARENA_HEIGHT, ARENA_WIDTH,
     components::{GameState, Phase, Position},
     resources::TileSize,
-    ARENA_HEIGHT, ARENA_WIDTH,
 };
 
 mod setup;
@@ -49,7 +49,7 @@ fn position_translation(
         pos / bound_game * bound_window - (bound_window / 2.) + (tile_size / 2.)
     }
 
-    let Ok(window) = windows.get_single() else {
+    let Ok(window) = windows.single() else {
         return;
     };
 

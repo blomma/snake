@@ -1,29 +1,9 @@
-use bevy::{
-    ecs::{system::Commands, world::World},
-    math::Vec2,
-    utils::default,
-};
-use bevy_prototype_lyon::{
-    draw::{Fill, Stroke},
-    entity::ShapeBundle,
-    prelude::GeometryBuilder,
-    shapes::{self},
-};
-
+use super::{WALL_COLOR, Wall};
 use crate::{
     components::{OnGameScreen, Position},
     resources::{FreePositions, TileSize},
 };
-
-use super::{Wall, WALL_COLOR};
-
-fn wall_shape(tile_size: &TileSize) -> shapes::Rectangle {
-    shapes::Rectangle {
-        extents: Vec2::splat(tile_size.0 as f32),
-        origin: shapes::RectangleOrigin::Center,
-        radii: None,
-    }
-}
+use bevy::prelude::*;
 
 pub fn init(mut commands: Commands) {
     commands.queue(|world: &mut World| {
@@ -31,7 +11,14 @@ pub fn init(mut commands: Commands) {
             return;
         };
 
-        let shape = wall_shape(tile_size);
+        let rectangle = Rectangle::new(tile_size.0 as f32, tile_size.0 as f32);
+        let mesh =
+            world.resource_scope(|_world, mut meshes: Mut<Assets<Mesh>>| meshes.add(rectangle));
+
+        let color = world.resource_scope(|_world, mut materials: Mut<Assets<ColorMaterial>>| {
+            materials.add(WALL_COLOR)
+        });
+
         let mut positions: Vec<Position> = Vec::new();
 
         for x in 0..crate::ARENA_WIDTH {
@@ -39,12 +26,8 @@ pub fn init(mut commands: Commands) {
             world.spawn((
                 Wall,
                 pos,
-                ShapeBundle {
-                    path: GeometryBuilder::build_as(&shape),
-                    ..default()
-                },
-                Fill::color(WALL_COLOR),
-                Stroke::color(WALL_COLOR),
+                Mesh2d(mesh.clone()),
+                MeshMaterial2d(color.clone()),
                 OnGameScreen,
             ));
             positions.push(pos);
@@ -56,12 +39,8 @@ pub fn init(mut commands: Commands) {
             world.spawn((
                 Wall,
                 pos,
-                ShapeBundle {
-                    path: GeometryBuilder::build_as(&shape),
-                    ..default()
-                },
-                Fill::color(WALL_COLOR),
-                Stroke::color(WALL_COLOR),
+                Mesh2d(mesh.clone()),
+                MeshMaterial2d(color.clone()),
                 OnGameScreen,
             ));
             positions.push(pos);
@@ -72,12 +51,8 @@ pub fn init(mut commands: Commands) {
             world.spawn((
                 Wall,
                 pos,
-                ShapeBundle {
-                    path: GeometryBuilder::build_as(&shape),
-                    ..default()
-                },
-                Fill::color(WALL_COLOR),
-                Stroke::color(WALL_COLOR),
+                Mesh2d(mesh.clone()),
+                MeshMaterial2d(color.clone()),
                 OnGameScreen,
             ));
             positions.push(pos);
@@ -89,12 +64,8 @@ pub fn init(mut commands: Commands) {
             world.spawn((
                 Wall,
                 pos,
-                ShapeBundle {
-                    path: GeometryBuilder::build_as(&shape),
-                    ..default()
-                },
-                Fill::color(WALL_COLOR),
-                Stroke::color(WALL_COLOR),
+                Mesh2d(mesh.clone()),
+                MeshMaterial2d(color.clone()),
                 OnGameScreen,
             ));
             positions.push(pos);

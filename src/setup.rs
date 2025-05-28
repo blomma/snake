@@ -11,7 +11,7 @@ pub fn setup(
     let font = asset_server.load("fonts/AllertaStencil-Regular.ttf");
     commands.insert_resource(DefaultFontHandle(font));
 
-    let Ok(mut window) = windows.get_single_mut() else {
+    let Ok(mut window) = windows.single_mut() else {
         return;
     };
 

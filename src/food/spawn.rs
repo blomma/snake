@@ -1,34 +1,10 @@
-use bevy::{
-    ecs::{
-        event::EventReader,
-        query::With,
-        system::{Commands, Query, Res, ResMut},
-    },
-    math::Vec2,
-    utils::default,
-};
-use bevy_prototype_lyon::{
-    draw::{Fill, Stroke},
-    entity::ShapeBundle,
-    prelude::GeometryBuilder,
-    shapes,
-};
-
+use super::{FOOD_COLOR, Food, SpawnFood};
 use crate::{
     components::{OnGameScreen, Position},
     diplopod::{DiplopodSegment, DiplopodSegments},
     resources::{FreePositions, TileSize},
 };
-
-use super::{Food, SpawnFood, FOOD_COLOR};
-
-fn food_shape(tile_size: &TileSize) -> shapes::Rectangle {
-    shapes::Rectangle {
-        extents: Vec2::splat(tile_size.0 as f32),
-        origin: shapes::RectangleOrigin::Center,
-        radii: None,
-    }
-}
+use bevy::prelude::*;
 
 pub fn spawn_food(
     mut commands: Commands,
@@ -37,12 +13,13 @@ pub fn spawn_food(
     mut diplopod_positions: Query<&mut Position, With<DiplopodSegment>>,
     mut free_positions: ResMut<FreePositions>,
     tile_size: Res<TileSize>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     if spawn_food_reader.read().next().is_none() {
         return;
     }
 
-    let shape = food_shape(&tile_size);
     let segment_positions = segments
         .0
         .iter()
@@ -55,12 +32,8 @@ pub fn spawn_food(
     if let Some(pos) = position_candidates.positions.pop() {
         commands
             .spawn((
-                ShapeBundle {
-                    path: GeometryBuilder::build_as(&shape),
-                    ..default()
-                },
-                Fill::color(FOOD_COLOR),
-                Stroke::color(FOOD_COLOR),
+                Mesh2d(meshes.add(Rectangle::new(tile_size.0 as f32, tile_size.0 as f32))),
+                MeshMaterial2d(materials.add(FOOD_COLOR)),
             ))
             .insert(Food)
             .insert(OnGameScreen)

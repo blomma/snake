@@ -1,29 +1,9 @@
-use bevy::{
-    ecs::{system::Commands, world::World},
-    math::Vec2,
-    utils::default,
-};
-use bevy_prototype_lyon::{
-    draw::{Fill, Stroke},
-    entity::ShapeBundle,
-    prelude::GeometryBuilder,
-    shapes,
-};
-
+use super::{AMOUNT_OF_FOOD, FOOD_COLOR, Food};
 use crate::{
     components::{OnGameScreen, Position},
     resources::{FreePositions, TileSize},
 };
-
-use super::{Food, AMOUNT_OF_FOOD, FOOD_COLOR};
-
-fn food_shape(tile_size: &TileSize) -> shapes::Rectangle {
-    shapes::Rectangle {
-        extents: Vec2::splat(tile_size.0 as f32),
-        origin: shapes::RectangleOrigin::Center,
-        radii: None,
-    }
-}
+use bevy::prelude::*;
 
 pub fn init(mut commands: Commands) {
     commands.queue(|world: &mut World| {
@@ -43,22 +23,22 @@ pub fn init(mut commands: Commands) {
             return;
         };
 
+        let rectangle = Rectangle::new(tile_size.0 as f32, tile_size.0 as f32);
+        let mesh =
+            world.resource_scope(|_world, mut meshes: Mut<Assets<Mesh>>| meshes.add(rectangle));
+
+        let color = world.resource_scope(|_world, mut materials: Mut<Assets<ColorMaterial>>| {
+            materials.add(FOOD_COLOR)
+        });
+
         let mut positions: Vec<Position> = Vec::new();
 
-        let shape = food_shape(tile_size);
         for _ in 0..AMOUNT_OF_FOOD {
             match position_candidates.positions.pop() {
                 None => break,
                 Some(pos) => {
                     world
-                        .spawn((
-                            ShapeBundle {
-                                path: GeometryBuilder::build_as(&shape),
-                                ..default()
-                            },
-                            Fill::color(FOOD_COLOR),
-                            Stroke::color(FOOD_COLOR),
-                        ))
+                        .spawn((Mesh2d(mesh.clone()), MeshMaterial2d(color.clone())))
                         .insert(Food)
                         .insert(OnGameScreen)
                         .insert(pos);
