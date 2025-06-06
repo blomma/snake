@@ -1,20 +1,9 @@
-use bevy::{
-    app::{Plugin, Update},
-    ecs::{
-        entity::Entity,
-        event::{Event, EventReader},
-        query::With,
-        schedule::{IntoScheduleConfigs, common_conditions::on_event},
-        system::{Query, ResMut},
-    },
-    state::{condition::in_state, state::NextState},
-};
-
 use crate::{
     components::{GameState, Phase},
     diplopod::DiplopodSegment,
     resources::{FreePositions, Highscore, Lastscore},
 };
+use bevy::prelude::*;
 
 #[derive(Event)]
 pub struct GameOver;

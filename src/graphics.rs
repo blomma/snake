@@ -1,8 +1,6 @@
-use std::time::Duration;
-
+use crate::{GameState, OnGameScreen, components::*, events::ShowMessage, resources::Paused};
 use bevy::{prelude::*, time::common_conditions::on_timer};
-
-use crate::{components::*, events::ShowMessage, resources::Paused, GameState, OnGameScreen};
+use std::time::Duration;
 
 pub struct GraphicsPlugin;
 

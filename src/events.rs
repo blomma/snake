@@ -1,6 +1,5 @@
-use bevy::ecs::event::Event;
-
 use crate::components::Position;
+use bevy::prelude::*;
 
 #[derive(Event)]
 pub struct ShowMessage {

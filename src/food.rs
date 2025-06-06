@@ -1,27 +1,12 @@
 mod setup;
 pub mod spawn;
 
-use bevy::{
-    app::{App, Plugin, Update},
-    color::Color,
-    ecs::{
-        component::Component,
-        event::Event,
-        query::With,
-        schedule::IntoScheduleConfigs,
-        system::{Query, Res},
-    },
-    math::Vec3,
-    state::{condition::in_state, state::OnEnter},
-    transform::components::Transform,
-    window::{PrimaryWindow, Window},
-};
-
 use crate::{
     ARENA_HEIGHT, ARENA_WIDTH,
     components::{GameState, Phase, Position},
     resources::TileSize,
 };
+use bevy::{prelude::*, window::PrimaryWindow};
 
 pub const AMOUNT_OF_FOOD: u32 = 16;
 pub const FOOD_COLOR: Color = Color::srgb(0.0, 1.0, 0.0);

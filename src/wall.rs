@@ -1,23 +1,9 @@
-use bevy::{
-    app::{App, Plugin, Update},
-    color::Color,
-    ecs::{
-        component::Component,
-        query::With,
-        schedule::IntoScheduleConfigs,
-        system::{Query, Res},
-    },
-    math::Vec3,
-    state::{condition::in_state, state::OnEnter},
-    transform::components::Transform,
-    window::{PrimaryWindow, Window},
-};
-
 use crate::{
     ARENA_HEIGHT, ARENA_WIDTH,
     components::{GameState, Phase, Position},
     resources::TileSize,
 };
+use bevy::{prelude::*, window::PrimaryWindow};
 
 mod setup;
 

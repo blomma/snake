@@ -9,6 +9,15 @@ exclude = ["dist", "build", "assets", "credits"]
 [workspace]
 members = ["mobile"]
 
+[lints.clippy]
+# Bevy supplies arguments to systems via dependency injection, so it's natural for systems to
+# request more than 7 arguments, which would undesirably trigger this lint.
+too_many_arguments = "allow"
+# Queries may access many components, which would undesirably trigger this lint.
+type_complexity = "allow"
+# Make sure macros use their standard braces, such as `[]` for `bevy_ecs::children!`.
+nonstandard_macro_braces = "warn"
+
 [profile.dev.package."*"]
 opt-level = 3
 
@@ -40,7 +49,6 @@ bevy_asset_loader = { version = "0.23" }
 webbrowser = { version = "1", features = ["hardened"] }
 anyhow = "1"
 bevy_embedded_assets = "0.13"
-# bevy_prototype_lyon = "0.13"
 directories = "6"
 rand = "0.9.0"
 
@@ -54,4 +62,4 @@ log = { version = "0.4", features = [
 ] }
 
 [build-dependencies]
-embed-resource = "1"
+embed-resource = "3"

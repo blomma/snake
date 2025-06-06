@@ -1,3 +1,7 @@
+use crate::{
+    GameState, TITLE,
+    resources::{self, Highscore, Lastscore},
+};
 use anyhow::{Result, anyhow};
 use bevy::{
     color::palettes::css::ANTIQUE_WHITE,
@@ -8,11 +12,6 @@ use bevy::{
 use directories::ProjectDirs;
 use std::time::Duration;
 use std::{fs::File, io::Write};
-
-use crate::{
-    GameState, TITLE,
-    resources::{self, Highscore, Lastscore},
-};
 
 /// Adds a screen that shows the highscore of the current session and
 /// the score of the last game.

@@ -132,7 +132,6 @@ pub fn growth(
 }
 
 pub fn movement(
-    fixed_time: Res<Time>,
     mut heads: Query<(Entity, &DiplopodHead)>,
     mut positions: Query<&mut Position, With<DiplopodSegment>>,
     segments: ResMut<DiplopodSegments>,
@@ -150,8 +149,8 @@ pub fn movement(
         .collect::<Vec<Position>>();
 
     let mut head_pos = positions.get_mut(head_entity).unwrap();
-    head_pos.x += (head.direction.x * fixed_time.delta_secs()) as i32;
-    head_pos.y += (head.direction.y * fixed_time.delta_secs()) as i32;
+    head_pos.x += head.direction.x as i32;
+    head_pos.y += head.direction.y as i32;
 
     if segment_positions.contains(&head_pos) && (head.direction.x != 0.0 || head.direction.y != 0.0)
     {

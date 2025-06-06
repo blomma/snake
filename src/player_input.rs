@@ -10,22 +10,18 @@ pub fn keyboard(keyboard_input: Res<ButtonInput<KeyCode>>, mut heads: Query<&mut
 
     if keyboard_input.any_pressed([KeyCode::ArrowLeft, KeyCode::KeyA, KeyCode::KeyH]) {
         direction = Vec2::new(-1.0, 0.0);
-        info!("LEFT");
     }
 
     if keyboard_input.any_pressed([KeyCode::ArrowRight, KeyCode::KeyD, KeyCode::KeyL]) {
         direction = Vec2::new(1.0, 0.0);
-        info!("RIGHT");
     }
 
     if keyboard_input.any_pressed([KeyCode::ArrowUp, KeyCode::KeyW, KeyCode::KeyK]) {
         direction = Vec2::new(direction.x, 1.0);
-        info!("UP");
     }
 
     if keyboard_input.any_pressed([KeyCode::ArrowDown, KeyCode::KeyS, KeyCode::KeyJ]) {
         direction = Vec2::new(direction.x, -1.0);
-        info!("DOWN");
     }
 
     if direction != Vec2::ZERO {
