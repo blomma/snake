@@ -8,7 +8,7 @@ use bevy::prelude::*;
 pub fn init(mut commands: Commands) {
     commands.queue(|world: &mut World| {
         let Some(tile_size) = world.get_resource::<TileSize>() else {
-            return;
+            panic!("Tilesize not available");
         };
 
         let rectangle = Rectangle::new(tile_size.0 as f32, tile_size.0 as f32);
@@ -71,10 +71,9 @@ pub fn init(mut commands: Commands) {
             positions.push(pos);
         }
 
-        if let Some(mut free_positions) = world.get_resource_mut::<FreePositions>() {
-            while let Some(position) = positions.pop() {
-                free_positions.remove(&position);
-            }
+        let Some(mut free_positions) = world.get_resource_mut::<FreePositions>() else {
+            panic!("FreePositions not available");
         };
+        free_positions.remove_all(&positions);
     });
 }
